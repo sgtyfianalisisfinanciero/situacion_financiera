@@ -6,12 +6,13 @@ ecosistema de la subdirección (diariospython, tesorotools, series_bbdd).
 
 ## Visión general
 
-El proyecto sigue una arquitectura en cuatro capas: un **provider**
+El proyecto sigue una arquitectura en seis capas: un **provider**
 que sabe descargar datos de una fuente externa, un **store** que
 gestiona la persistencia local con actualizaciones incrementales,
 un **pipeline de transformaciones** que convierte los datos crudos
-en las magnitudes que necesita el informe, y un **orquestador** que
-conecta todo y exporta los resultados.
+en las magnitudes que necesita el informe, unos **artists** que
+generan gráficos PNG, un **report** que ensambla el documento
+Word, y un **orquestador** que conecta todo.
 
 El provider, el store y el pipeline no se conocen entre sí. El
 orquestador es el único que sabe de todos. Esto permite cambiar
@@ -33,6 +34,14 @@ graph LR
     R -- "DataFrame transformado" --> O
     O --> XLS[datos_hogares.xlsx]
     O --> FT[datos_hogares.feather]
+    O -- "charts.yaml + feather" --> C[src/charts.py]
+    C -- "LinePlot" --> TT[tesorotools.artists]
+    C -- "Stacked*Plot" --> SA[src/artists/stacked.py]
+    TT --> PNG[output/charts/*.png]
+    SA --> PNG
+    PNG --> RP[src/report.py]
+    RP -- "Report/Section/Images" --> TR[tesorotools.render]
+    TR --> DOCX[informe_hogares.docx]
 ```
 
 ## El provider: cómo se descargan los datos
@@ -212,6 +221,61 @@ bloque `providers` con la configuración específica del proveedor.
 Esto facilita una futura migración a tesorotools: el
 `InstrumentRegistry` del diario ya sabe leer este formato.
 
+## Generación de gráficos
+
+Los gráficos se definen declarativamente en
+`series/charts.yaml`. Cada entrada tiene un ID (que se
+convierte en el nombre del PNG), un tipo de gráfico, las
+series a representar, formato de ejes y opciones de leyenda.
+
+El driver `src/charts.py` lee el YAML, carga el feather
+transformado y despacha cada gráfico al artist adecuado:
+
+- **`line`** — usa `tesorotools.artists.line_plot.LinePlot`.
+  Para sortear el problema de frecuencias mixtas (series
+  mensuales y trimestrales en el mismo DataFrame), el driver
+  extrae las columnas relevantes, elimina las filas donde
+  todas son NaN, y guarda un feather temporal limpio que
+  LinePlot puede leer sin puntos invisibles.
+
+- **`stacked_area`** y **`stacked_bar`** — usan las clases
+  locales `StackedAreaPlot` y `StackedBarPlot` de
+  `src/artists/stacked.py`. Siguen la misma interfaz que
+  `LinePlot` (constructor + método `plot()`) y reutilizan
+  el estilo visual de tesorotools (mplstyle, spines, baseline,
+  formato de ejes). Están diseñadas para migrar a tesorotools
+  cuando el paquete las absorba.
+
+### Frecuencias mixtas
+
+El DataFrame combina series mensuales (crédito, tipos) y
+trimestrales (cuentas financieras) en un solo índice
+temporal. Las series trimestrales tienen NaN en las fechas
+mensuales intermedias. Esto tiene dos implicaciones:
+
+1. **Transformaciones**: `shift(n)` y `rolling(n)` operan
+   sobre filas, no periodos. Las reglas de `_yoy_rule` y
+   `_rolling_sum_rule` aplican `dropna()` antes de operar
+   para que `n` cuente observaciones reales.
+
+2. **Gráficos**: matplotlib dibuja puntos invisibles en
+   fechas aisladas (rodeadas de NaN). El driver de gráficos
+   elimina filas all-NaN antes de pasar datos a LinePlot.
+
+## Generación del informe Word
+
+`src/report.py` construye el documento Word usando el módulo
+`tesorotools.render`: `Report`, `Section`, `Image`, `Images`,
+`Title` y `Text`. La estructura del documento se define en
+código (no en YAML) porque el layout es específico del
+informe de hogares.
+
+El informe tiene tres secciones (Cuentas financieras,
+Crédito a hogares, Tipos de interés) con gráficos organizados
+en filas de 1-2 imágenes. Cada fila tiene una nota de fuente.
+Los gráficos faltantes (por datos no disponibles) se omiten
+sin error.
+
 ## Relación con el ecosistema
 
 Este proyecto es un consumidor potencial de tesorotools, no una
@@ -226,6 +290,8 @@ estrategia es:
   proyecto.
 - El formato de `instruments.yaml` es compatible con el del diario
   para facilitar la convergencia futura.
+- `StackedAreaPlot` y `StackedBarPlot` están pendientes de migrar
+  a `tesorotools.artists` (ver nota en `src/artists/stacked.py`).
 
 ```mermaid
 graph TB

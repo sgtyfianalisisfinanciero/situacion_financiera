@@ -27,9 +27,11 @@ from typing import TypedDict, cast
 import pandas as pd
 import yaml
 
+from src.charts import generate_charts
 from src.pipeline.engine import apply_transformations
 from src.pipeline.rules import all_rules
 from src.providers.bde import BdeProvider
+from src.report import generate_report
 from src.store import SeriesStore
 
 logging.basicConfig(
@@ -68,6 +70,9 @@ ROOT = Path(__file__).parent
 
 #: Path to the series catalog.
 INSTRUMENTS_PATH = ROOT / "series" / "instruments.yaml"
+
+#: Path to the charts config.
+CHARTS_PATH = ROOT / "series" / "charts.yaml"
 
 #: Output directory for generated files.
 OUTPUT_DIR = ROOT / "output"
@@ -228,11 +233,23 @@ def main() -> None:
     df.reset_index().to_feather(feather_path)
     logger.info("Feather saved: %s", feather_path)
 
+    # Save with DatetimeIndex for chart consumption.
+    chart_feather = OUTPUT_DIR / "datos_transformados.feather"
+    df.to_feather(chart_feather)
+    logger.info("Chart feather saved: %s", chart_feather)
+
     if args.download_only:
         logger.info("--download-only mode. Done.")
         return
 
-    # Chart and Word generation will go here.
+    # 5. Generate charts
+    charts_dir = OUTPUT_DIR / "charts"
+    generate_charts(CHARTS_PATH, chart_feather, charts_dir)
+
+    # 6. Generate Word report
+    report_path = OUTPUT_DIR / "informe_hogares.docx"
+    generate_report(charts_dir, CHARTS_PATH, report_path)
+
     logger.info("Pipeline completed.")
 
 

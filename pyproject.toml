@@ -9,6 +9,8 @@ dependencies = [
     "requests>=2.31",
     "pyyaml>=6.0",
     "openpyxl>=3.1",
+    "python-docx>=1.2.0",
+    "tesorotools-python>=0.0.24",
 ]
 
 [dependency-groups]

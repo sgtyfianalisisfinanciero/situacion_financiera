@@ -20,6 +20,7 @@ euros** (suffix ``_BN``).  Percentage series are left as-is.
 
 from typing import TYPE_CHECKING
 
+import pandas as pd
 
 from src.pipeline.engine import TransformationRule
 
@@ -53,7 +54,9 @@ def _sum_rule(output: str, sources: list[str]) -> TransformationRule:
     return TransformationRule(
         output_name=output,
         dependencies=list(sources),
-        compute=lambda df, cols=list(sources): df[cols].sum(axis=1),
+        compute=lambda df, cols=list(sources): df[cols].sum(
+            axis=1, min_count=1
+        ),
     )
 
 
@@ -71,24 +74,49 @@ def _ratio_rule(
 def _yoy_rule(
     output: str, source: str, periods: int = 12
 ) -> TransformationRule:
-    """Year-over-year growth rate."""
+    """Year-over-year growth rate.
+
+    Drops NaN before shifting so that ``periods`` counts
+    actual observations, not DataFrame rows.  This is
+    essential when monthly and quarterly series coexist
+    in the same DataFrame: ``shift(4)`` on a quarterly
+    column would otherwise skip only 4 rows (~4 months)
+    instead of 4 quarters.
+    """
+
+    def _compute(
+        df: pd.DataFrame, s: str = source, p: int = periods
+    ) -> pd.Series:
+        clean = df[s].dropna()
+        return clean / clean.shift(p) - 1
+
     return TransformationRule(
         output_name=output,
         dependencies=[source],
-        compute=lambda df, s=source, p=periods: df[s] / df[s].shift(p) - 1,
+        compute=_compute,
     )
 
 
 def _rolling_sum_rule(
     output: str, source: str, window: int = 4
 ) -> TransformationRule:
-    """Rolling sum (e.g. 4-quarter annualization)."""
+    """Rolling sum (e.g. 4-quarter annualization).
+
+    Same NaN-aware approach as ``_yoy_rule``: operates on
+    the non-NaN subset so the window counts real
+    observations.
+    """
+
+    def _compute(
+        df: pd.DataFrame, s: str = source, w: int = window
+    ) -> pd.Series:
+        clean = df[s].dropna()
+        return clean.rolling(window=w, min_periods=w).sum()
+
     return TransformationRule(
         output_name=output,
         dependencies=[source],
-        compute=lambda df, s=source, w=window: (
-            df[s].rolling(window=w, min_periods=w).sum()
-        ),
+        compute=_compute,
     )
 
 

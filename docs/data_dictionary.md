@@ -167,6 +167,16 @@ transformaciones. Las series de stocks DCF llegan en euros (no
 millones), mientras que los flujos DN llegan en millones de euros.
 Los tipos de interés llegan como porcentaje directo (ej. 2.77).
 
-Las transformaciones de unidades (convertir a miles de millones,
-calcular tasas de variación, etc.) se implementarán en el módulo
-`src/pipeline/` y se documentarán por separado.
+El pipeline de transformaciones (`src/pipeline/rules.py`) convierte
+estas unidades crudas en magnitudes normalizadas:
+
+- **`_BN`**: miles de millones de euros (K_EUR ÷ 1e6, M_EUR ÷ 1e3,
+  BN_EUR sin cambio). Series en PCT se ignoran.
+- **`_YOY`**: tasa de variación interanual (12 periodos para
+  mensuales, 4 para trimestrales). Opera sobre observaciones
+  no-NaN para manejar frecuencias mixtas.
+- **`_4Q`**: suma móvil de 4 trimestres para anualizar flujos.
+- **`CF_PCT_*`**: composición de activos como fracción del total.
+- **`FLUJOS_TOTAL_BN`**, **`CF_OTROS_Y_PRESTAMOS_BN`**:
+  agregaciones por suma (con `min_count=1` para propagar NaN
+  correctamente).

@@ -96,6 +96,42 @@ uv run --active ruff check --fix .
 uv run --active ruff format .
 ```
 
+## Añadir un gráfico nuevo
+
+1. Añadir la entrada en `series/charts.yaml`:
+
+   ```yaml
+   mi_nuevo_grafico:
+     type: line          # line | stacked_area | stacked_bar
+     title: "Titulo del grafico"
+     subtitle: "Unidades"
+     source: "Fuente: ..."
+     series:
+       SERIE_1: "Etiqueta 1"
+       SERIE_2: "Etiqueta 2"
+     format: { units: "%", decimals: 1 }
+     start_date: "2015-01-01"
+     baseline: true       # mostrar linea en y=0
+     legend: { ncol: 2 }  # columnas de la leyenda
+     scale: 100           # multiplicar datos (ej. ratio -> %)
+   ```
+
+2. Para que el gráfico aparezca en el informe Word, añadir
+   su ID a la sección correspondiente en `src/report.py`
+   (listas `_SECTION_*`).
+
+3. Ejecutar el pipeline para verificar:
+
+   ```bash
+   uv run --active python generar_hogares.py
+   ```
+
+## Modificar un gráfico existente
+
+Los parámetros de cada gráfico están en `series/charts.yaml`.
+No hace falta tocar código Python para cambiar series, escalas,
+fechas o formato de ejes.
+
 ## Leer los datos desde otro script
 
 El feather de salida se puede leer desde cualquier script Python

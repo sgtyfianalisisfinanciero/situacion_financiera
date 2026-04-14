@@ -20,13 +20,14 @@ no hay ninguna serie con provider `bde`.
 **`export_excel(df, path)`** — Exporta un DataFrame a un fichero
 Excel. Crea el directorio padre si no existe.
 
-**`main()`** — Parsea argumentos CLI y ejecuta el pipeline.
+**`main()`** — Parsea argumentos CLI y ejecuta el pipeline:
+descarga, transformación, generación de gráficos y Word.
 
 ### Argumentos CLI
 
 | Flag | Descripción |
 |---|---|
-| `--download-only` | Solo descarga y exporta datos, sin generar informe Word |
+| `--download-only` | Solo descarga y exporta datos (sin gráficos ni Word) |
 | `--full` | Fuerza re-descarga completa (borra el feather existente) |
 | `--lookback Q` | Número de trimestres a re-verificar para revisiones (defecto: 4) |
 
@@ -151,3 +152,51 @@ sobre el total.
 
 **`all_rules(catalog)`** — Todas las reglas anteriores en el orden
 correcto (normalización, agregaciones, composición, tasas, sumas).
+
+## `src.charts`
+
+Driver de generación de gráficos. Lee `series/charts.yaml` y
+produce PNGs en `output/charts/`.
+
+**`generate_charts(config_path, data_path, out_dir)`** — Genera
+todos los gráficos definidos en el YAML. Despacha cada uno al
+artist adecuado según su tipo (`line`, `stacked_area`,
+`stacked_bar`). Devuelve la lista de IDs generados. Los gráficos
+que fallan se registran como warning y no interrumpen el resto.
+
+## `src.artists.stacked`
+
+Artists locales para gráficos que tesorotools aún no soporta.
+Siguen la misma interfaz que `LinePlot` (constructor + `plot()`).
+
+### `StackedAreaPlot`
+
+Gráfico de áreas apiladas. Usado para composición de activos
+financieros.
+
+**Constructor**: `StackedAreaPlot(out_path, data, series, *,
+scale=1, start_date=None, end_date=None, baseline=False,
+format=None, legend=None)`
+
+**`plot()`** — Genera y guarda el PNG. Devuelve el `Axes`.
+
+### `StackedBarPlot`
+
+Gráfico de barras apiladas con soporte para valores negativos.
+Usado para variación neta de activos/pasivos por componente.
+
+**Constructor**: `StackedBarPlot(out_path, data, series, *,
+scale=1, start_date=None, end_date=None, baseline=True,
+format=None, legend=None)`
+
+**`plot()`** — Genera y guarda el PNG. Devuelve el `Axes`.
+
+## `src.report`
+
+Generación del documento Word usando `tesorotools.render`.
+
+**`generate_report(charts_dir, config_path, output_path)`** —
+Construye el informe Word. Descubre qué PNGs existen en
+`charts_dir`, lee títulos y subtítulos de `charts.yaml`, y
+ensambla el documento con `Report`/`Section`/`Images` de
+tesorotools. Los gráficos faltantes se omiten sin error.
