@@ -15,6 +15,7 @@ from src.charts import (
     _clean_slice,
     _make_format,
     _make_legend,
+    _resample_annual_recent,
     generate_charts,
 )
 
@@ -37,6 +38,46 @@ def _mixed_freq_df() -> pd.DataFrame:
 def _write_config(path: Path, charts: dict[str, Any]) -> None:
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump({"charts": charts}, f)
+
+
+class TestResampleAnnualRecent(unittest.TestCase):
+    def test_closed_years_take_q4(self) -> None:
+        idx = pd.date_range("2022-01-01", periods=8, freq="QS")
+        idx.name = "date"
+        df = pd.DataFrame({"X": [10, 20, 30, 40, 50, 60, 70, 80]}, index=idx)
+        result = _resample_annual_recent(df)
+        # 2022 closed: Q4 value = 40. 2023 is last year: 4 quarters.
+        self.assertEqual(result.loc["2022", "X"], 40)
+        self.assertIn("T1-2023", result.index)
+        self.assertIn("T4-2023", result.index)
+
+    def test_empty_df(self) -> None:
+        df = pd.DataFrame(
+            {"X": [float("nan")]},
+            index=pd.DatetimeIndex(["2023-01-01"], name="date"),
+        )
+        result = _resample_annual_recent(df)
+        self.assertTrue(result.empty)
+
+    def test_incomplete_closed_year(self) -> None:
+        """Closed year with <4 quarters takes last available."""
+        idx = pd.DatetimeIndex(
+            ["2022-01-01", "2022-04-01", "2023-01-01"],
+            name="date",
+        )
+        df = pd.DataFrame({"X": [10, 20, 30]}, index=idx)
+        result = _resample_annual_recent(df)
+        # 2022 has 2 quarters: take last (20).
+        self.assertEqual(result.loc["2022", "X"], 20)
+        self.assertIn("T1-2023", result.index)
+
+    def test_single_year(self) -> None:
+        idx = pd.date_range("2025-01-01", periods=3, freq="QS")
+        idx.name = "date"
+        df = pd.DataFrame({"X": [1, 2, 3]}, index=idx)
+        result = _resample_annual_recent(df)
+        # Only year = last year, all quarters shown.
+        self.assertEqual(len(result), 3)
 
 
 class TestCleanSlice(unittest.TestCase):
@@ -164,6 +205,31 @@ class TestGenerateCharts(unittest.TestCase):
             result = generate_charts(config_path, self.feather_path, out_dir)
         self.assertEqual(result, [])
 
+    def test_stacked_resampled_with_scale(self) -> None:
+        idx = pd.date_range("2023-01-01", periods=8, freq="QS")
+        idx.name = "date"
+        df = pd.DataFrame({"A": range(1, 9)}, index=idx)
+        feather = self.tmp_path / "q_scale.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "scaled": {
+                    "type": "stacked_bar",
+                    "resample": "annual_recent",
+                    "series": {"A": "A"},
+                    "format": {"units": "", "decimals": 0},
+                    "scale": 1000,
+                    "baseline": True,
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_sc"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["scaled"])
+
     @patch("src.charts.LinePlot")
     def test_failed_chart_logged(self, mock_lp_cls: MagicMock) -> None:
         mock_lp_cls.side_effect = RuntimeError("boom")
@@ -203,6 +269,32 @@ class TestGenerateCharts(unittest.TestCase):
         out_dir = self.tmp_path / "charts2"
         result = generate_charts(config_path, alt, out_dir)
         self.assertEqual(result, ["date_col"])
+
+    def test_stacked_resampled_dispatch(self) -> None:
+        """resample: annual_recent triggers resampled path."""
+        # Build quarterly data spanning 2 years.
+        idx = pd.date_range("2023-01-01", periods=8, freq="QS")
+        idx.name = "date"
+        df = pd.DataFrame({"A": range(1, 9), "B": range(11, 19)}, index=idx)
+        feather = self.tmp_path / "quarterly.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "resampled": {
+                    "type": "stacked_bar",
+                    "resample": "annual_recent",
+                    "series": {"A": "A", "B": "B"},
+                    "format": {"units": "", "decimals": 0},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_rs"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["resampled"])
+        self.assertTrue((out_dir / "resampled.png").exists())
 
     @patch("src.charts.LinePlot")
     def test_temp_feather_cleaned_up(self, mock_lp_cls: MagicMock) -> None:

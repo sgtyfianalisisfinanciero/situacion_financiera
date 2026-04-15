@@ -174,7 +174,7 @@ Esto debe producir:
 - `output/datos_hogares.xlsx` — Excel con datos transformados
 - `output/datos_hogares.feather` — feather genérico
 - `output/datos_transformados.feather` — feather con DatetimeIndex
-- `output/charts/*.png` — 17 gráficos
+- `output/charts/*.png` — 25 gráficos
 - `output/tables/*.feather` — 3 tablas
 - `output/informe_hogares.docx` — informe Word
 

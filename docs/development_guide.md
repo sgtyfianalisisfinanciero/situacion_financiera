@@ -164,14 +164,18 @@ El feather y el Excel contienen un DataFrame transformado con:
   valores están en las unidades originales de la API del BdE
   (K_EUR, M_EUR, BN_EUR o PCT según la serie).
 
-- **Columnas derivadas** (65): generadas por el pipeline de
+- **Columnas derivadas** (~90): generadas por el pipeline de
   transformaciones. Se distinguen por sus sufijos:
   - `_BN`: valor normalizado a miles de millones de euros.
   - `_YOY`: tasa de variación interanual (decimal, 0.04 = 4%).
-  - `_4Q`: suma móvil de 4 trimestres.
+  - `_4Q`: suma móvil de 4 trimestres (incl. componentes).
+  - `_DELTA_Q`, `_DELTA_4Q`: cambios de stock por periodo.
   - `CF_PCT_*`: composición de activos como fracción del total.
+  - `CF_REVAL_*`: residuos de revalorización.
   - `DUDOSIDAD_*`: ratio dudosos/crédito total (decimal).
-  - `FLUJOS_TOTAL_BN`, `CF_OTROS_Y_PRESTAMOS_BN`: agregaciones.
+  - `HIPOT_PCT_*`: proporción de hipotecas por tipo.
+  - `DEUDA_PIB_VAR_*`: descomposición del ratio deuda/PIB.
+  - `AMORTIZACIONES_VIVIENDA`, `RENEGOCIACIONES_ACUM`.
 
 - **Valores**: `float64`. Las celdas donde no hay dato (por
   frecuencias mixtas o por falta de historia para calcular un

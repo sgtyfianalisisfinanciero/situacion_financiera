@@ -81,18 +81,38 @@ otros activos + préstamos).
 **`composition_rules()`** — Ratios de cada categoría de activo
 sobre el total.
 
+**`mortgage_type_rules()`** — Volúmenes y proporciones de hipotecas
+por tipo de interés (variable, mixto, fijo). Agrega los plazos de
+fijación en las tres categorías.
+
 **`dudosidad_rules()`** — Ratios de dudosidad: dudosos / crédito
 total para hogares, vivienda y consumo.
 
+**`amortization_rules()`** — Amortizaciones hipotecarias
+(stock_{t-1} - stock_t + flujos) y renegociaciones acumuladas
+(cumsum).
+
+**`stock_change_rules()`** — Cambios de stock (delta trimestral y
+4Q) y residuos de revalorización (delta - transacciones) para
+activos y pasivos. Necesario para los gráficos de descomposición
+VNA/VNP.
+
+**`deuda_pib_decomposition_rules()`** — Descompone la variación
+intertrimestral del ratio deuda/PIB en contribución de la deuda
+y contribución del PIB.
+
 **`growth_rate_rules()`** — Tasas de variación interanual. Sufijo
-`_YOY`.
+`_YOY`. Incluye stocks de crédito (12 periodos) y cuentas
+financieras (4 periodos).
 
 **`rolling_rules()`** — Sumas móviles de 4 trimestres. Sufijo
-`_4Q`.
+`_4Q`. Incluye VNA, VNP, OFN y componentes de flujos de
+activos/pasivos.
 
 **`all_rules(catalog)`** — Todas las reglas anteriores en el orden
-correcto (normalización, agregaciones, composición, dudosidad,
-tasas, sumas).
+correcto: normalización → agregaciones → hipotecas tipo →
+composición → dudosidad → amortizaciones → descomposición
+deuda/PIB → tasas YOY → rolling 4Q → cambios de stock.
 
 ## `src.charts`
 
@@ -133,7 +153,7 @@ un `display_name`, y un bloque `providers.bde` con `code` y
 
 ### `series/charts.yaml`
 
-Definiciones de los 17 gráficos. Cada entrada tiene tipo, series,
+Definiciones de los 25 gráficos. Cada entrada tiene tipo, series,
 formato, escala, fechas, leyenda.
 
 ### `series/tables.yaml`

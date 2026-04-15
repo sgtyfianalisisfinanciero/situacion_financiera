@@ -35,64 +35,68 @@ charts:
     format: { units: "%", decimals: 1 }
     start_date: "2000-01-01"
 
-  vna_componentes:
+  vna_descomp:
     type: stacked_bar
-    title: "Variación neta de activos"
-    subtitle: "Miles de millones de euros"
+    title: "Variación activos financieros"
+    subtitle: "Millones de euros"
     source: "Fuente: Banco de España"
+    resample: annual_recent
     series:
-      CF_VAR_EFECTIVO_BN: "Efectivo y depósitos"
-      CF_VAR_VALORES_BN: "Valores de deuda"
-      CF_VAR_ACCIONES_BN: "Acciones"
-      CF_VAR_FONDOS_BN: "Fondos de inversión"
-      CF_VAR_SEGUROS_BN: "Seguros y pensiones"
+      CF_VNA_4Q: "Adq. netas"
+      CF_REVAL_ACTIVO_4Q: "Revalorización y otras var."
     format: { units: "", decimals: 0 }
-    start_date: "2015-01-01"
+    scale: 1000
+    start_date: "2014-01-01"
     baseline: true
+    legend: { ncol: 2 }
 
-  vnp_componentes:
+  vnp_descomp:
     type: stacked_bar
-    title: "Variación neta de pasivos"
-    subtitle: "Miles de millones de euros"
+    title: "Variación pasivos financieros"
+    subtitle: "Millones de euros"
     source: "Fuente: Banco de España"
+    resample: annual_recent
     series:
-      CF_VAR_PRESTAMOS_BN: "Préstamos"
-      CF_VAR_CRED_COMERCIALES_BN: "Créditos comerciales"
-      CF_VAR_OTROS_PASIVOS_BN: "Otros pasivos"
+      CF_VAR_PRESTAMOS_4Q: "Préstamos"
+      CF_REVAL_PRESTAMOS_4Q: "Revalorización y otras var."
     format: { units: "", decimals: 0 }
-    start_date: "2015-01-01"
+    scale: 1000
+    start_date: "2014-01-01"
     baseline: true
+    legend: { ncol: 2 }
 
   activos_stock:
-    type: line
+    type: stacked_bar
     title: "Activos financieros de los hogares"
-    subtitle: "Miles de millones de euros"
+    subtitle: "Millones de euros"
     source: "Fuente: Banco de España"
     series:
-      CF_EFECTIVO_DEPOSITOS_BN: "Efectivo y depósitos"
-      CF_VALORES_DEUDA_BN: "Valores de deuda"
+      CF_EFECTIVO_DEPOSITOS_BN: "Efectivo"
+      CF_VALORES_DEUDA_BN: "Valores deuda"
       CF_PARTICIPACIONES_BN: "Participaciones y FI"
       CF_SEGUROS_BN: "Seguros y pensiones"
-      CF_OTROS_Y_PRESTAMOS_BN: "Otros + préstamos"
+      CF_OTROS_Y_PRESTAMOS_BN: "Otros"
     format: { units: "", decimals: 0 }
-    start_date: "2015-01-01"
-    legend: { ncol: 3 }
+    scale: 1000
+    start_date: "1999-01-01"
+    baseline: false
+    legend: { ncol: 3, sep: -0.18 }
 
   activos_composicion:
     type: stacked_area
-    title: "Activos financieros sobre activos totales"
+    title: "Activos sobre activos totales"
     subtitle: "Porcentaje"
     source: "Fuente: Banco de España"
     series:
-      CF_PCT_EFECTIVO: "Efectivo y depósitos"
-      CF_PCT_VALORES: "Valores de deuda"
+      CF_PCT_EFECTIVO: "Efectivo"
+      CF_PCT_VALORES: "Valores deuda"
       CF_PCT_PARTICIPACIONES: "Participaciones y FI"
       CF_PCT_SEGUROS: "Seguros y pensiones"
-      CF_PCT_OTROS: "Otros + préstamos"
+      CF_PCT_OTROS: "Otros"
     format: { units: "%", decimals: 0 }
     scale: 100
-    start_date: "2015-01-01"
-    legend: { ncol: 3 }
+    start_date: "1999-01-01"
+    legend: { ncol: 3, sep: -0.22 }
 
   deuda_pib:
     type: line
@@ -102,7 +106,54 @@ charts:
     series:
       CF_DEUDA_PIB: "Deuda / PIB"
     format: { units: "%", decimals: 0 }
-    start_date: "2000-01-01"
+    start_date: "2001-09-01"
+
+  flujos_activos:
+    type: line
+    title: "Flujos de activos financieros"
+    subtitle: "Millones de euros. Acum. 4 trimestres"
+    source: "Fuente: Banco de España"
+    series:
+      CF_VNA_4Q: "Total"
+      CF_VAR_EFECTIVO_4Q: "Efectivo"
+      CF_VAR_VALORES_4Q: "Valores deuda"
+      CF_VAR_ACCIONES_4Q: "Acciones"
+      CF_VAR_FONDOS_4Q: "Fondos inv."
+      CF_VAR_SEGUROS_4Q: "Seguros"
+    format: { units: "", decimals: 0 }
+    scale: 1000
+    start_date: "2019-09-01"
+    baseline: true
+    legend: { ncol: 3, sep: -0.22 }
+
+  flujos_pasivos:
+    type: line
+    title: "Flujos de pasivos financieros"
+    subtitle: "Millones de euros. Acumulado 4 trimestres"
+    source: "Fuente: Banco de España"
+    series:
+      CF_VAR_PRESTAMOS_4Q: "Préstamos"
+      CF_VAR_CRED_COMERCIALES_4Q: "Créditos comerciales"
+      CF_VAR_OTROS_PASIVOS_4Q: "Otros pasivos"
+      CF_VNP_4Q: "Total"
+    format: { units: "", decimals: 0 }
+    scale: 1000
+    start_date: "2019-03-01"
+    baseline: true
+    legend: { ncol: 2, sep: -0.22 }
+
+  deuda_pib_variacion:
+    type: stacked_bar
+    title: "Variación de la deuda de hogares y contribuciones"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco de España"
+    series:
+      DEUDA_PIB_VAR_DEUDA: "Deuda"
+      DEUDA_PIB_VAR_PIB: "PIB"
+    format: { units: "%", decimals: 1 }
+    start_date: "2018-06-01"
+    baseline: true
+    legend: { ncol: 2 }
 
   deuda_hogares_yoy:
     type: line
@@ -157,12 +208,11 @@ charts:
       STOCK_PRESTAMOS_YOY: "Total"
       STOCK_VIVIENDA_YOY: "Vivienda"
       STOCK_CONSUMO_YOY: "Consumo"
-      STOCK_OTROS_YOY: "Otros fines"
     format: { units: "%", decimals: 1 }
     scale: 100
-    start_date: "2015-01-01"
+    start_date: "2007-09-01"
     baseline: true
-    legend: { ncol: 4 }
+    legend: { ncol: 3 }
 
   # --------------------------------------------------
   # Flujos de crédito
@@ -180,6 +230,69 @@ charts:
     format: { units: "", decimals: 1 }
     start_date: "2015-01-01"
     legend: { ncol: 3 }
+
+  flujos_credito_yoy:
+    type: line
+    title: "Tasa de variación interanual de los nuevos flujos de crédito a hogares"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco de España"
+    series:
+      FLUJOS_TOTAL_YOY: "Total"
+      FLUJOS_HIPOTECARIO_YOY: "Vivienda"
+      FLUJOS_CONSUMO_YOY: "Consumo"
+    format: { units: "%", decimals: 0 }
+    scale: 100
+    start_date: "2022-12-01"
+    baseline: true
+    legend: { ncol: 3 }
+
+  hipotecas_tipo_volumen:
+    type: line
+    title: "Volumen nuevas hipotecas por tipo"
+    subtitle: "Millones de euros"
+    source: "Fuente: Banco de España"
+    series:
+      FLUJOS_HIPOT_1A: "Variable"
+      FLUJOS_HIPOT_MIXTO: "Mixto"
+      FLUJOS_HIPOT_10A: "Fijo"
+    format: { units: "", decimals: 0 }
+    start_date: "2018-10-01"
+    legend: { ncol: 3 }
+
+  hipotecas_tipo_proporcion:
+    type: line
+    title: "Proporción nuevas hipotecas por tipo"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco de España"
+    series:
+      HIPOT_PCT_VARIABLE: "Variable"
+      HIPOT_PCT_MIXTO: "Mixto"
+      HIPOT_PCT_FIJO: "Fijo"
+    format: { units: "%", decimals: 0 }
+    scale: 100
+    start_date: "2007-10-01"
+    legend: { ncol: 3 }
+
+  amortizaciones:
+    type: line
+    title: "Amortizaciones de crédito hipotecario"
+    subtitle: "Millones de euros"
+    source: "Fuente: Banco de España"
+    series:
+      AMORTIZACIONES_VIVIENDA: "Amortizaciones"
+    format: { units: "", decimals: 0 }
+    scale: 1000
+    start_date: "2019-03-01"
+
+  renegociaciones_acum:
+    type: line
+    title: "Renegociaciones acumuladas del crédito para vivienda"
+    subtitle: "Millones de euros"
+    source: "Fuente: Banco de España"
+    series:
+      RENEGOCIACIONES_ACUM: "Renegociaciones acumuladas"
+    format: { units: "", decimals: 0 }
+    start_date: "2015-01-01"
 
   renegociaciones:
     type: line
@@ -201,10 +314,10 @@ charts:
     subtitle: "Porcentaje"
     source: "Fuente: Banco de España"
     series:
-      TI_STOCK_VIVIENDA: "Adquisición vivienda"
-      TI_STOCK_CONSUMO: "Consumo y otros"
+      TI_STOCK_VIVIENDA: "Stock adquisición de vivienda"
+      TI_STOCK_CONSUMO: "Stock consumo y otros fines"
     format: { units: "%", decimals: 2 }
-    start_date: "2015-01-01"
+    start_date: "2003-10-01"
     legend: { ncol: 2 }
 
   tedr_flujos:
@@ -213,12 +326,11 @@ charts:
     subtitle: "Tipo medio ponderado TEDR"
     source: "Fuente: Banco de España"
     series:
-      TEDR_VIVIENDA: "Vivienda"
+      TEDR_VIVIENDA: "Adquisición de vivienda"
       TEDR_CONSUMO: "Consumo"
-      TEDR_OTROS: "Otros fines"
     format: { units: "%", decimals: 2 }
-    start_date: "2015-01-01"
-    legend: { ncol: 3 }
+    start_date: "2003-10-01"
+    legend: { ncol: 2 }
 
   tedr_vivienda_tipo:
     type: line
@@ -227,12 +339,11 @@ charts:
     source: "Fuente: Banco de España"
     series:
       TEDR_VARIABLE: "Variable"
+      TEDR_MIXTO_1_5: "Mixto"
       TEDR_FIJO: "Fijo"
-      TEDR_MIXTO_1_5: "Mixto 1-5 años"
-      TEDR_MIXTO_5_10: "Mixto 5-10 años"
-    format: { units: "%", decimals: 2 }
-    start_date: "2015-01-01"
-    legend: { ncol: 4 }
+    format: { units: "%", decimals: 1 }
+    start_date: "2020-04-01"
+    legend: { ncol: 3 }
 
   tedr_renegociaciones:
     type: line

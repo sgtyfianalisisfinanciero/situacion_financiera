@@ -29,7 +29,7 @@ graph LR
     P -- "fetch" --> API[API BdE]
     S -- "store_bde.feather" --> S
     O -- "renombrar + transformar" --> TT[tesorotools pipeline]
-    TT --> DF[DataFrame 124 cols]
+    TT --> DF[DataFrame ~150 cols]
     DF --> XLS[datos_hogares.xlsx]
     DF --> FT[datos_hogares.feather]
     DF --> CF[datos_transformados.feather]
@@ -105,19 +105,26 @@ de `tesorotools.pipeline.engine`. Las factories de reglas
 `rolling_sum_rule`) vienen de `tesorotools.pipeline.rules`.
 
 Las reglas concretas de hogares (`src/pipeline/rules.py`) están
-organizadas en seis familias, ejecutadas en este orden:
+organizadas en diez familias, ejecutadas en este orden:
 
 1. **Normalización** (`_BN`): K_EUR/M_EUR/BN_EUR a miles de
    millones. Series PCT se ignoran.
 2. **Agregaciones**: totales derivados (flujos totales, otros
    activos + préstamos).
-3. **Composición** (`CF_PCT_*`): cada activo como fracción del
+3. **Hipotecas por tipo**: volúmenes y proporciones por tipo
+   de interés (variable, mixto, fijo).
+4. **Composición** (`CF_PCT_*`): cada activo como fracción del
    total.
-4. **Dudosidad** (`DUDOSIDAD_*`): ratio dudosos/crédito total
-   para hogares, vivienda, consumo.
-5. **Tasas interanuales** (`_YOY`): 12 periodos para mensuales,
+5. **Dudosidad** (`DUDOSIDAD_*`): ratio dudosos/crédito total.
+6. **Amortizaciones**: flujo implícito de amortización y
+   renegociaciones acumuladas.
+7. **Descomposición deuda/PIB**: variación intertrimestral
+   descompuesta en contribución deuda y PIB.
+8. **Tasas interanuales** (`_YOY`): 12 periodos para mensuales,
    4 para trimestrales.
-6. **Sumas móviles** (`_4Q`): acumulado de 4 trimestres.
+9. **Sumas móviles** (`_4Q`): acumulado de 4 trimestres.
+10. **Cambios de stock**: deltas de nivel y residuos de
+    revalorización (para gráficos VNA/VNP).
 
 El orden importa: normalización primero (las demás dependen de
 `_BN`), agregaciones antes de composición (que divide por el
@@ -169,10 +176,10 @@ lo renderiza a Word con `python-docx`.
 | Fichero | Contenido | Quién lo escribe |
 |---|---|---|
 | `store_bde.feather` | 59 columnas, códigos BdE crudos | SeriesStore |
-| `datos_hogares.xlsx` | 124 columnas, IDs canónicos | orquestador |
+| `datos_hogares.xlsx` | ~150 columnas, IDs canónicos | orquestador |
 | `datos_hogares.feather` | Igual, con columna `date` | orquestador |
 | `datos_transformados.feather` | Igual, con DatetimeIndex | orquestador |
-| `charts/*.png` | 17 gráficos | src/charts.py |
+| `charts/*.png` | 25 gráficos | src/charts.py |
 | `tables/*.feather` | 3 tablas formateadas | src/tables.py |
 | `informe_hogares.docx` | Word final | src/report.py |
 

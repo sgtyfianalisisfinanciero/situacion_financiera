@@ -18,10 +18,15 @@ from tesorotools.pipeline.rules import (
 from src.pipeline.rules import (
     aggregation_rules,
     all_rules,
+    amortization_rules,
     composition_rules,
+    deuda_pib_decomposition_rules,
+    dudosidad_rules,
     growth_rate_rules,
+    mortgage_type_rules,
     normalize_rules,
     rolling_rules,
+    stock_change_rules,
 )
 
 
@@ -175,6 +180,102 @@ class TestRollingRules(unittest.TestCase):
     def test_returns_rules(self) -> None:
         rules = rolling_rules()
         self.assertGreater(len(rules), 0)
+
+
+class TestMortgageTypeRules(unittest.TestCase):
+    def test_returns_rules(self) -> None:
+        rules = mortgage_type_rules()
+        names = [r.output_name for r in rules]
+        self.assertIn("FLUJOS_HIPOT_MIXTO", names)
+        self.assertIn("HIPOT_PCT_FIJO", names)
+
+
+class TestDudosidadRules(unittest.TestCase):
+    def test_returns_rules(self) -> None:
+        rules = dudosidad_rules()
+        names = [r.output_name for r in rules]
+        self.assertIn("DUDOSIDAD_HOGARES", names)
+
+
+class TestStockChangeRules(unittest.TestCase):
+    def test_returns_rules(self) -> None:
+        rules = stock_change_rules()
+        names = [r.output_name for r in rules]
+        self.assertIn("CF_TOTAL_ACTIVO_BN_DELTA_4Q", names)
+        self.assertIn("CF_REVAL_ACTIVO_4Q", names)
+        self.assertIn("CF_REVAL_PRESTAMOS_4Q", names)
+
+
+class TestAmortizationRules(unittest.TestCase):
+    def test_returns_rules(self) -> None:
+        rules = amortization_rules()
+        names = [r.output_name for r in rules]
+        self.assertIn("AMORTIZACIONES_VIVIENDA", names)
+        self.assertIn("RENEGOCIACIONES_ACUM", names)
+
+
+class TestDeudaPibDecomposition(unittest.TestCase):
+    def test_returns_rules(self) -> None:
+        rules = deuda_pib_decomposition_rules()
+        names = [r.output_name for r in rules]
+        self.assertIn("DEUDA_PIB_VAR_DEUDA", names)
+        self.assertIn("DEUDA_PIB_VAR_PIB", names)
+
+
+class TestStockChangeExecution(unittest.TestCase):
+    """Integration: run stock_change_rules on realistic data."""
+
+    def test_reval_computed(self) -> None:
+        df = _quarterly_df(
+            {
+                "CF_TOTAL_ACTIVO_BN": [100.0, 110.0, 120.0, 135.0, 150.0],
+                "CF_VNA_BN": [8.0, 9.0, 10.0, 12.0, 11.0],
+                "CF_VNA_4Q": [30.0, 35.0, 39.0, 39.0, 42.0],
+                "CF_TOTAL_PASIVO_BN": [50.0, 48.0, 47.0, 46.0, 49.0],
+                "CF_VNP_BN": [-3.0, -2.0, -1.0, 0.0, 2.0],
+                "CF_VNP_4Q": [-10.0, -8.0, -6.0, -6.0, -1.0],
+                "CF_DEUDA_HOGARES_BN": [40.0, 38.0, 37.0, 36.0, 39.0],
+                "CF_VAR_PRESTAMOS_BN": [-3.0, -2.0, -1.0, 0.0, 2.0],
+                "CF_VAR_PRESTAMOS_4Q": [-8.0, -6.0, -6.0, -6.0, -1.0],
+            }
+        )
+        rules = stock_change_rules()
+        result = apply_transformations(df, rules)
+        self.assertIn("CF_REVAL_ACTIVO_4Q", result.columns)
+        self.assertIn("CF_REVAL_PRESTAMOS_4Q", result.columns)
+        self.assertIn("CF_REVAL_ACTIVO_Q", result.columns)
+
+
+class TestAmortizationExecution(unittest.TestCase):
+    def test_amortizaciones(self) -> None:
+        df = _monthly_df(
+            {
+                "STOCK_VIVIENDA_BN": [100.0, 98.0, 97.0],
+                "FLUJOS_HIPOTECARIO_CON_RENEG_BN": [5.0, 4.0, 3.0],
+                "RENEGOCIACIONES": [10.0, 20.0, 30.0],
+            }
+        )
+        rules = amortization_rules()
+        result = apply_transformations(df, rules)
+        self.assertIn("AMORTIZACIONES_VIVIENDA", result.columns)
+        self.assertIn("RENEGOCIACIONES_ACUM", result.columns)
+        self.assertAlmostEqual(result["RENEGOCIACIONES_ACUM"].iloc[2], 60.0)
+
+
+class TestDeudaPibExecution(unittest.TestCase):
+    def test_decomposition(self) -> None:
+        df = _quarterly_df(
+            {
+                "CF_DEUDA_MILLONES_BN": [50.0, 51.0, 52.0, 53.0, 54.0],
+                "PIB_BN": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "CF_DEUDA_PIB": [50.0, 50.5, 51.0, 51.5, 51.9],
+            }
+        )
+        rules = deuda_pib_decomposition_rules()
+        result = apply_transformations(df, rules)
+        self.assertIn("DEUDA_PIB_VAR_DEUDA", result.columns)
+        self.assertIn("DEUDA_PIB_VAR_TOTAL", result.columns)
+        self.assertIn("DEUDA_PIB_VAR_PIB", result.columns)
 
 
 class TestAllRules(unittest.TestCase):
