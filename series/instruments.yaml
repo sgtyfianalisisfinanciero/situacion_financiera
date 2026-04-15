@@ -398,3 +398,47 @@ instruments:
       bde:
         code: "DSPC102020CB8B000_SS14A_TPRB6B000.T"
         unit: PCT
+
+  # --- Créditos dudosos (BdE, be0413, monthly) ---
+
+  CREDITO_HOGARES_TOTAL:
+    display_name: "crédito total a hogares"
+    providers:
+      bde:
+        code: "D_MEE62000"
+        unit: K_EUR
+
+  CREDITO_VIVIENDA_TOTAL:
+    display_name: "crédito para adquisición de vivienda"
+    providers:
+      bde:
+        code: "D_MEE62100"
+        unit: K_EUR
+
+  CREDITO_CONSUMO_TOTAL:
+    display_name: "crédito al consumo"
+    providers:
+      bde:
+        code: "D_MEE62300"
+        unit: K_EUR
+
+  DUDOSOS_HOGARES:
+    display_name: "créditos dudosos hogares"
+    providers:
+      bde:
+        code: "D_MEADU201"
+        unit: K_EUR
+
+  DUDOSOS_VIVIENDA:
+    display_name: "créditos dudosos vivienda"
+    providers:
+      bde:
+        code: "D_MEADU210"
+        unit: K_EUR
+
+  DUDOSOS_CONSUMO:
+    display_name: "créditos dudosos consumo"
+    providers:
+      bde:
+        code: "D_MEADU226"
+        unit: K_EUR

@@ -5,17 +5,11 @@
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
 
-import yaml
+import pandas as pd
 from PIL import Image as PILImage
 
-from src.report import (
-    _build_row,
-    _build_section,
-    _load_chart_meta,
-    generate_report,
-)
+from src.report import _load_template, generate_report
 
 
 def _create_dummy_png(path: Path) -> None:
@@ -24,219 +18,95 @@ def _create_dummy_png(path: Path) -> None:
     img.save(path, format="PNG")
 
 
-def _write_charts_yaml(path: Path, charts: dict[str, Any]) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump({"charts": charts}, f)
-
-
-def _minimal_charts_yaml(path: Path) -> None:
-    _write_charts_yaml(
-        path,
-        {
-            "chart_a": {
-                "title": "Chart A",
-                "subtitle": "Units A",
-                "source": "Source A",
-            },
-            "chart_b": {
-                "title": "Chart B",
-                "subtitle": "Units B",
-                "source": "Source B",
-            },
-        },
+def _create_dummy_feather(path: Path) -> None:
+    """Create a minimal valid feather for Table."""
+    df = pd.DataFrame(
+        {"Jan-26": ["100", "200"]},
+        index=["Serie A", "Serie B"],
     )
+    df.to_feather(path)
 
 
-class TestLoadChartMeta(unittest.TestCase):
+def _write_template(
+    path: Path,
+    image_dir: Path,
+    table_dir: Path,
+) -> None:
+    """Write a minimal template.yaml for testing."""
+    # Paths relative to the template file.
+    img_rel = image_dir.relative_to(path.parent)
+    tbl_rel = table_dir.relative_to(path.parent)
+    content = f"""\
+imports:
+  image: {img_rel.as_posix()}
+  table: {tbl_rel.as_posix()}
+
+report: !report
+  title: !title
+    title: "Test Report"
+
+  charts: !section
+    title: "Charts"
+    chart_a.png: !image
+      title: "Chart A"
+      subtitle: "sub"
+      width: 3
+
+  datos: !section
+    title: "Datos"
+    test_tbl: !table
+      title: "Test Table"
+      index_name: true
+"""
+    path.write_text(content, encoding="utf-8")
+
+
+class TestLoadTemplate(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
-        self.config = Path(self.tmp.name) / "charts.yaml"
-        _minimal_charts_yaml(self.config)
+        self.root = Path(self.tmp.name)
+        self.img_dir = self.root / "charts"
+        self.img_dir.mkdir()
+        self.tbl_dir = self.root / "tables"
+        self.tbl_dir.mkdir()
+        _create_dummy_png(self.img_dir / "chart_a.png")
+        _create_dummy_feather(self.tbl_dir / "test_tbl.feather")
+        self.template = self.root / "template.yaml"
+        _write_template(self.template, self.img_dir, self.tbl_dir)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
-    def test_loads_titles(self) -> None:
-        meta = _load_chart_meta(self.config)
-        self.assertEqual(meta["chart_a"]["title"], "Chart A")
-        self.assertEqual(meta["chart_b"]["subtitle"], "Units B")
+    def test_loads_report(self) -> None:
+        from tesorotools.render.report import Report
 
-    def test_uses_id_as_fallback_title(self) -> None:
-        path = Path(self.tmp.name) / "bare.yaml"
-        _write_charts_yaml(path, {"bare": {}})
-        meta = _load_chart_meta(path)
-        self.assertEqual(meta["bare"]["title"], "bare")
-
-
-class TestBuildRow(unittest.TestCase):
-    def setUp(self) -> None:
-        self.tmp = tempfile.TemporaryDirectory()
-        self.charts_dir = Path(self.tmp.name)
-        # Create dummy PNGs.
-        _create_dummy_png(self.charts_dir / "chart_a.png")
-        _create_dummy_png(self.charts_dir / "chart_b.png")
-        self.meta: dict[str, dict[str, str]] = {
-            "chart_a": {
-                "title": "A",
-                "subtitle": "sub A",
-                "source": "src",
-            },
-            "chart_b": {
-                "title": "B",
-                "subtitle": "sub B",
-                "source": "src",
-            },
-        }
-        self.available = {"chart_a", "chart_b"}
-
-    def tearDown(self) -> None:
-        self.tmp.cleanup()
-
-    def test_single_chart_returns_image(self) -> None:
-        row_def: dict[str, Any] = {
-            "charts": ["chart_a"],
-            "source": "Fuente",
-        }
-        result = _build_row(
-            row_def,
-            self.charts_dir,
-            self.meta,
-            self.available,
-        )
-        # Single chart returns an Image, not Images.
-        self.assertIsNotNone(result)
-        self.assertEqual(type(result).__name__, "Image")
-
-    def test_two_charts_returns_images(self) -> None:
-        row_def: dict[str, Any] = {
-            "charts": ["chart_a", "chart_b"],
-            "source": "Fuente",
-        }
-        result = _build_row(
-            row_def,
-            self.charts_dir,
-            self.meta,
-            self.available,
-        )
-        self.assertIsNotNone(result)
-        self.assertEqual(type(result).__name__, "Images")
-
-    def test_no_available_returns_none(self) -> None:
-        row_def: dict[str, Any] = {
-            "charts": ["nonexistent"],
-            "source": "Fuente",
-        }
-        result = _build_row(
-            row_def,
-            self.charts_dir,
-            self.meta,
-            self.available,
-        )
-        self.assertIsNone(result)
-
-    def test_partial_availability(self) -> None:
-        row_def: dict[str, Any] = {
-            "charts": ["chart_a", "missing"],
-            "source": "Fuente",
-        }
-        result = _build_row(
-            row_def,
-            self.charts_dir,
-            self.meta,
-            self.available,
-        )
-        # Only one chart available -> Image (not Images).
-        self.assertIsNotNone(result)
-        self.assertEqual(type(result).__name__, "Image")
-
-
-class TestBuildSection(unittest.TestCase):
-    def setUp(self) -> None:
-        self.tmp = tempfile.TemporaryDirectory()
-        self.charts_dir = Path(self.tmp.name)
-        _create_dummy_png(self.charts_dir / "c1.png")
-        self.meta: dict[str, dict[str, str]] = {
-            "c1": {
-                "title": "C1",
-                "subtitle": "",
-                "source": "src",
-            },
-        }
-
-    def tearDown(self) -> None:
-        self.tmp.cleanup()
-
-    def test_builds_section_with_rows(self) -> None:
-        rows = [
-            {"charts": ["c1"], "source": "Fuente"},
-        ]
-        section = _build_section(
-            "Test Section",
-            rows,
-            self.charts_dir,
-            self.meta,
-            {"c1"},
-        )
-        self.assertIsNotNone(section)
-
-    def test_returns_none_when_all_rows_empty(self) -> None:
-        rows = [
-            {"charts": ["missing"], "source": "Fuente"},
-        ]
-        section = _build_section(
-            "Empty",
-            rows,
-            self.charts_dir,
-            self.meta,
-            {"c1"},
-        )
-        self.assertIsNone(section)
+        report = _load_template(self.template)
+        self.assertIsInstance(report, Report)
 
 
 class TestGenerateReport(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
-        self.tmp_path = Path(self.tmp.name)
-        self.charts_dir = self.tmp_path / "charts"
-        self.charts_dir.mkdir()
-
-        # Create dummy PNGs for charts referenced in
-        # the report layout.
-        for name in [
-            "cap_nec_financiacion",
-            "ahorro_bruto",
-            "stock_credito_yoy",
-            "ti_stock",
-        ]:
-            _create_dummy_png(self.charts_dir / f"{name}.png")
-
-        self.config = self.tmp_path / "charts.yaml"
-        charts: dict[str, Any] = {}
-        for name in [
-            "cap_nec_financiacion",
-            "ahorro_bruto",
-            "stock_credito_yoy",
-            "ti_stock",
-        ]:
-            charts[name] = {
-                "title": name.replace("_", " ").title(),
-                "subtitle": "Test",
-                "source": "Fuente test",
-            }
-        _write_charts_yaml(self.config, charts)
+        self.root = Path(self.tmp.name)
+        self.img_dir = self.root / "charts"
+        self.img_dir.mkdir()
+        self.tbl_dir = self.root / "tables"
+        self.tbl_dir.mkdir()
+        _create_dummy_png(self.img_dir / "chart_a.png")
+        _create_dummy_feather(self.tbl_dir / "test_tbl.feather")
+        self.template = self.root / "template.yaml"
+        _write_template(self.template, self.img_dir, self.tbl_dir)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
     def test_creates_docx(self) -> None:
-        output = self.tmp_path / "report.docx"
-        generate_report(self.charts_dir, self.config, output)
+        output = self.root / "report.docx"
+        generate_report(self.template, output)
         self.assertTrue(output.exists())
         self.assertGreater(output.stat().st_size, 0)
 
-    def test_handles_no_charts(self) -> None:
-        empty_dir = self.tmp_path / "empty"
-        empty_dir.mkdir()
-        output = self.tmp_path / "empty_report.docx"
-        generate_report(empty_dir, self.config, output)
+    def test_creates_parent_dir(self) -> None:
+        output = self.root / "subdir" / "report.docx"
+        generate_report(self.template, output)
         self.assertTrue(output.exists())

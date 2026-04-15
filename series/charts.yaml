@@ -1,12 +1,12 @@
-# Chart definitions for the hogares report.
+# Definiciones de gráficos para el informe de hogares.
 #
-# Each key becomes the PNG filename ({key}.png).
-# Types: line (tesorotools LinePlot), stacked_area, stacked_bar (local).
+# Cada clave se convierte en el nombre del PNG ({clave}.png).
+# Tipos: line (tesorotools LinePlot), stacked_area, stacked_bar.
 #
-# series: mapping of column name -> display label.
-# format: units + decimals for axis labels.
-# scale: multiplier applied to data before plotting (e.g. 100 for ratio->%).
-# start_date: ISO date string for the left edge of the chart.
+# series: mapeo columna -> etiqueta de leyenda.
+# format: unidades + decimales para los ejes.
+# scale: multiplicador sobre los datos (ej. 100 para ratio -> %).
+# start_date: fecha ISO del borde izquierdo del gráfico.
 
 charts:
 
@@ -16,20 +16,20 @@ charts:
 
   cap_nec_financiacion:
     type: line
-    title: "Capacidad/necesidad de financiacion de hogares"
+    title: "Capacidad/necesidad de financiación de hogares"
     subtitle: "Porcentaje sobre la renta bruta disponible"
-    source: "Fuente: INE y Banco de Espana"
+    source: "Fuente: INE y Banco de España"
     series:
-      CAP_NEC_FINANCIACION: "Cap./nec. financiacion"
+      CAP_NEC_FINANCIACION: "Cap./nec. financiación"
     format: { units: "%", decimals: 1 }
     start_date: "2000-01-01"
     baseline: true
 
   ahorro_bruto:
     type: line
-    title: "Evolucion del ahorro bruto de los hogares"
+    title: "Evolución del ahorro bruto de los hogares"
     subtitle: "Porcentaje sobre la RBD. Acumulado 4 trimestres"
-    source: "Fuente: INE y Banco de Espana"
+    source: "Fuente: INE y Banco de España"
     series:
       AHORRO_BRUTO: "Ahorro bruto"
     format: { units: "%", decimals: 1 }
@@ -37,14 +37,14 @@ charts:
 
   vna_componentes:
     type: stacked_bar
-    title: "Variacion neta de activos"
+    title: "Variación neta de activos"
     subtitle: "Miles de millones de euros"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
-      CF_VAR_EFECTIVO_BN: "Efectivo y depositos"
+      CF_VAR_EFECTIVO_BN: "Efectivo y depósitos"
       CF_VAR_VALORES_BN: "Valores de deuda"
       CF_VAR_ACCIONES_BN: "Acciones"
-      CF_VAR_FONDOS_BN: "Fondos de inversion"
+      CF_VAR_FONDOS_BN: "Fondos de inversión"
       CF_VAR_SEGUROS_BN: "Seguros y pensiones"
     format: { units: "", decimals: 0 }
     start_date: "2015-01-01"
@@ -52,12 +52,12 @@ charts:
 
   vnp_componentes:
     type: stacked_bar
-    title: "Variacion neta de pasivos"
+    title: "Variación neta de pasivos"
     subtitle: "Miles de millones de euros"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
-      CF_VAR_PRESTAMOS_BN: "Prestamos"
-      CF_VAR_CRED_COMERCIALES_BN: "Creditos comerciales"
+      CF_VAR_PRESTAMOS_BN: "Préstamos"
+      CF_VAR_CRED_COMERCIALES_BN: "Créditos comerciales"
       CF_VAR_OTROS_PASIVOS_BN: "Otros pasivos"
     format: { units: "", decimals: 0 }
     start_date: "2015-01-01"
@@ -67,13 +67,13 @@ charts:
     type: line
     title: "Activos financieros de los hogares"
     subtitle: "Miles de millones de euros"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
-      CF_EFECTIVO_DEPOSITOS_BN: "Efectivo y depositos"
+      CF_EFECTIVO_DEPOSITOS_BN: "Efectivo y depósitos"
       CF_VALORES_DEUDA_BN: "Valores de deuda"
       CF_PARTICIPACIONES_BN: "Participaciones y FI"
       CF_SEGUROS_BN: "Seguros y pensiones"
-      CF_OTROS_Y_PRESTAMOS_BN: "Otros + prestamos"
+      CF_OTROS_Y_PRESTAMOS_BN: "Otros + préstamos"
     format: { units: "", decimals: 0 }
     start_date: "2015-01-01"
     legend: { ncol: 3 }
@@ -82,13 +82,13 @@ charts:
     type: stacked_area
     title: "Activos financieros sobre activos totales"
     subtitle: "Porcentaje"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
-      CF_PCT_EFECTIVO: "Efectivo y depositos"
+      CF_PCT_EFECTIVO: "Efectivo y depósitos"
       CF_PCT_VALORES: "Valores de deuda"
       CF_PCT_PARTICIPACIONES: "Participaciones y FI"
       CF_PCT_SEGUROS: "Seguros y pensiones"
-      CF_PCT_OTROS: "Otros + prestamos"
+      CF_PCT_OTROS: "Otros + préstamos"
     format: { units: "%", decimals: 0 }
     scale: 100
     start_date: "2015-01-01"
@@ -98,7 +98,7 @@ charts:
     type: line
     title: "Deuda de los hogares"
     subtitle: "Porcentaje sobre el PIB"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       CF_DEUDA_PIB: "Deuda / PIB"
     format: { units: "%", decimals: 0 }
@@ -106,9 +106,9 @@ charts:
 
   deuda_hogares_yoy:
     type: line
-    title: "Variacion de la deuda de hogares"
+    title: "Variación de la deuda de hogares"
     subtitle: "Porcentaje interanual"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       CF_DEUDA_HOGARES_YOY: "Deuda hogares"
     format: { units: "%", decimals: 1 }
@@ -120,21 +120,39 @@ charts:
     type: line
     title: "Riqueza financiera neta de los hogares"
     subtitle: "Miles de millones de euros"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       CF_RIQUEZA_NETA_BN: "Riqueza neta"
     format: { units: "", decimals: 0 }
     start_date: "2000-01-01"
 
   # --------------------------------------------------
-  # Stock de credito
+  # Dudosidad
+  # --------------------------------------------------
+
+  dudosidad:
+    type: line
+    title: "Ratios de dudosidad de la financiación a hogares"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco de España"
+    series:
+      DUDOSIDAD_HOGARES: "Total hogares"
+      DUDOSIDAD_VIVIENDA: "Vivienda"
+      DUDOSIDAD_CONSUMO: "Consumo"
+    format: { units: "%", decimals: 1 }
+    scale: 100
+    start_date: "2008-01-01"
+    legend: { ncol: 3 }
+
+  # --------------------------------------------------
+  # Stock de crédito
   # --------------------------------------------------
 
   stock_credito_yoy:
     type: line
-    title: "Tasa de variacion interanual del stock de credito a hogares"
+    title: "Tasa de variación interanual del stock de crédito a hogares"
     subtitle: "Porcentaje"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       STOCK_PRESTAMOS_YOY: "Total"
       STOCK_VIVIENDA_YOY: "Vivienda"
@@ -147,14 +165,14 @@ charts:
     legend: { ncol: 4 }
 
   # --------------------------------------------------
-  # Flujos de credito
+  # Flujos de crédito
   # --------------------------------------------------
 
   flujos_credito:
     type: line
-    title: "Nuevos flujos de credito a hogares"
+    title: "Nuevos flujos de crédito a hogares"
     subtitle: "Miles de millones de euros"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       FLUJOS_HIPOTECARIO_CON_RENEG_BN: "Hipotecario (con reneg.)"
       FLUJOS_CONSUMO_BN: "Consumo"
@@ -165,25 +183,25 @@ charts:
 
   renegociaciones:
     type: line
-    title: "Renegociaciones del credito a la vivienda"
+    title: "Renegociaciones del crédito a la vivienda"
     subtitle: "Millones de euros"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       RENEGOCIACIONES: "Renegociaciones"
     format: { units: "", decimals: 0 }
     start_date: "2015-01-01"
 
   # --------------------------------------------------
-  # Tipos de interes
+  # Tipos de interés
   # --------------------------------------------------
 
   ti_stock:
     type: line
-    title: "Tipo de interes del stock de credito"
+    title: "Tipo de interés del stock de crédito"
     subtitle: "Porcentaje"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
-      TI_STOCK_VIVIENDA: "Adquisicion vivienda"
+      TI_STOCK_VIVIENDA: "Adquisición vivienda"
       TI_STOCK_CONSUMO: "Consumo y otros"
     format: { units: "%", decimals: 2 }
     start_date: "2015-01-01"
@@ -191,9 +209,9 @@ charts:
 
   tedr_flujos:
     type: line
-    title: "Tipo de interes de los nuevos flujos de credito"
+    title: "Tipo de interés de los nuevos flujos de crédito"
     subtitle: "Tipo medio ponderado TEDR"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       TEDR_VIVIENDA: "Vivienda"
       TEDR_CONSUMO: "Consumo"
@@ -204,23 +222,23 @@ charts:
 
   tedr_vivienda_tipo:
     type: line
-    title: "Tipos de interes nuevas operaciones de credito a la vivienda"
+    title: "Tipos de interés nuevas operaciones de crédito a la vivienda"
     subtitle: "Porcentaje"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       TEDR_VARIABLE: "Variable"
       TEDR_FIJO: "Fijo"
-      TEDR_MIXTO_1_5: "Mixto 1-5 anios"
-      TEDR_MIXTO_5_10: "Mixto 5-10 anios"
+      TEDR_MIXTO_1_5: "Mixto 1-5 años"
+      TEDR_MIXTO_5_10: "Mixto 5-10 años"
     format: { units: "%", decimals: 2 }
     start_date: "2015-01-01"
     legend: { ncol: 4 }
 
   tedr_renegociaciones:
     type: line
-    title: "TEDR de las renegociaciones de credito para vivienda"
+    title: "TEDR de las renegociaciones de crédito para vivienda"
     subtitle: "Porcentaje"
-    source: "Fuente: Banco de Espana"
+    source: "Fuente: Banco de España"
     series:
       TEDR_RENEG_VIVIENDA: "Renegociaciones"
       TEDR_VIVIENDA_SIN_RENEG: "Sin renegociaciones"

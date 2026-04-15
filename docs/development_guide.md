@@ -117,8 +117,9 @@ uv run --active ruff format .
    ```
 
 2. Para que el gráfico aparezca en el informe Word, añadir
-   su ID a la sección correspondiente en `src/report.py`
-   (listas `_SECTION_*`).
+   una entrada `!image` en la sección correspondiente de
+   `series/template.yaml`. La clave debe ser el nombre del
+   PNG (ej. `mi_nuevo_grafico.png: !image`).
 
 3. Ejecutar el pipeline para verificar:
 
@@ -140,12 +141,13 @@ o notebook sin necesidad de importar nada del proyecto:
 ```python
 import pandas as pd
 
+# datos_hogares.feather tiene 'date' como columna
 df = pd.read_feather("output/datos_hogares.feather")
-
-# Las columnas son IDs canónicos
+df = df.set_index("date")
 print(df["STOCK_VIVIENDA"].tail())
 
-# El índice es un DatetimeIndex
+# datos_transformados.feather ya tiene DatetimeIndex
+df = pd.read_feather("output/datos_transformados.feather")
 print(df.loc["2025":, "TEDR_FIJO"])
 ```
 
@@ -157,18 +159,19 @@ El feather y el Excel contienen un DataFrame transformado con:
   normalizado a medianoche. Rango desde 1994 (para las series
   trimestrales más antiguas) hasta el último dato disponible.
 
-- **Columnas originales** (53): IDs canónicos como
+- **Columnas originales** (59): IDs canónicos como
   `STOCK_VIVIENDA`, `TEDR_CONSUMO`, `CF_RIQUEZA_NETA`. Los
   valores están en las unidades originales de la API del BdE
   (K_EUR, M_EUR, BN_EUR o PCT según la serie).
 
-- **Columnas derivadas** (56): generadas por el pipeline de
+- **Columnas derivadas** (65): generadas por el pipeline de
   transformaciones. Se distinguen por sus sufijos:
   - `_BN`: valor normalizado a miles de millones de euros.
   - `_YOY`: tasa de variación interanual (decimal, 0.04 = 4%).
   - `_4Q`: suma móvil de 4 trimestres.
   - `CF_PCT_*`: composición de activos como fracción del total.
-  - `FLUJOS_TOTAL_BN`: agregación de flujos.
+  - `DUDOSIDAD_*`: ratio dudosos/crédito total (decimal).
+  - `FLUJOS_TOTAL_BN`, `CF_OTROS_Y_PRESTAMOS_BN`: agregaciones.
 
 - **Valores**: `float64`. Las celdas donde no hay dato (por
   frecuencias mixtas o por falta de historia para calcular un

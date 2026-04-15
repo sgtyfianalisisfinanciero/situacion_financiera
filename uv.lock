@@ -345,7 +345,7 @@ dependencies = [
     { name = "python-docx" },
     { name = "pyyaml" },
     { name = "requests" },
-    { name = "tesorotools-python" },
+    { name = "tesorotools-python", extra = ["bde"] },
 ]
 
 [package.dev-dependencies]
@@ -365,7 +365,7 @@ requires-dist = [
     { name = "python-docx", specifier = ">=1.2.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
-    { name = "tesorotools-python", specifier = ">=0.0.24" },
+    { name = "tesorotools-python", extras = ["bde"], specifier = ">=0.0.25" },
 ]
 
 [package.metadata.requires-dev]
@@ -1119,7 +1119,7 @@ wheels = [
 
 [[package]]
 name = "tesorotools-python"
-version = "0.0.24"
+version = "0.0.25"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "babel" },
@@ -1135,9 +1135,14 @@ dependencies = [
     { name = "pyyaml" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c3/40/8967e7046e92049c4f8317c3e8efc0183223108740cae9966de48fdabb68/tesorotools_python-0.0.24.tar.gz", hash = "sha256:91f98387139ed1595e5c98bcc5907ada047204d26dcc62013622bc246d5d3c08", size = 221596, upload-time = "2026-04-13T23:07:58.758Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/d3/1955f5e8914bc916832a3d9a6d2019c73d9415640ec08070c0c853716cf9/tesorotools_python-0.0.25.tar.gz", hash = "sha256:5c580cf1742718bfc94e2405b827add9b466f001a64eb540429712b9b3998951", size = 228900, upload-time = "2026-04-15T09:55:07.245Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/58/d4644f5107a5575827e4b21eadaf245f740711c8361c7f05629ccc24655b/tesorotools_python-0.0.24-py3-none-any.whl", hash = "sha256:4d99576eba4de292693e363e6b8a17adbd4910fa5015c099a04afdfe53eadae8", size = 234715, upload-time = "2026-04-13T23:08:31.336Z" },
+    { url = "https://files.pythonhosted.org/packages/16/d7/0291a24672280cf9c4c8377a6af3e0876324aa510a9b655f2599522c59af/tesorotools_python-0.0.25-py3-none-any.whl", hash = "sha256:6308b61110e4f58b3dc662fc30580fda65dbb9436b074b9ad3d3e755ff3fbb2d", size = 244453, upload-time = "2026-04-15T09:55:06.032Z" },
+]
+
+[package.optional-dependencies]
+bde = [
+    { name = "requests" },
 ]
 
 [[package]]

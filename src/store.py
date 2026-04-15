@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.providers.base import DataProvider
+from tesorotools.providers.base import DataProvider
 
 logger = logging.getLogger(__name__)
 

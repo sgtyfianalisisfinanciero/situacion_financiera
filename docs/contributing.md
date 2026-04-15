@@ -119,6 +119,65 @@ uv run --active pyright
 
 El `--check` de `ruff format` solo comprueba sin modificar nada.
 
+### Tests y cobertura
+
+El proyecto usa `unittest` con cobertura al 100%. Antes de cada
+commit hay que verificar que los tests pasan y la cobertura se
+mantiene:
+
+```bash
+# Ejecutar tests con medición de cobertura
+uv run --active python -m coverage run -m unittest discover tests
+
+# Ver informe de cobertura (solo código fuente)
+uv run --active python -m coverage report --show-missing --include="src/*,generar_hogares.py"
+```
+
+Si se añade código nuevo, se deben añadir tests que lo cubran.
+Si se elimina código, se deben eliminar los tests
+correspondientes. El objetivo es mantener el 100% de cobertura
+en todo el código fuente.
+
+Para ejecutar un test concreto:
+
+```bash
+uv run --active python -m unittest tests.test_rules
+uv run --active python -m unittest tests.test_charts.TestGenerateCharts.test_line_chart_dispatch
+```
+
+### Pipeline completo de verificación
+
+El siguiente comando ejecuta todas las comprobaciones de calidad
+en orden. Las cinco deben pasar antes de hacer commit:
+
+```bash
+uv run --active ruff check .                    # 1. lint
+uv run --active ruff format --check .           # 2. formato
+uv run --active pyright                         # 3. tipos
+uv run --active python -m coverage run \
+    -m unittest discover tests                  # 4. tests
+uv run --active python -m coverage report \
+    --show-missing --include="src/*,generar_hogares.py"  # 5. cobertura
+```
+
+### Pipeline funcional (end to end)
+
+Además de los checks de calidad, conviene verificar que el
+pipeline completo genera los outputs correctos:
+
+```bash
+uv run --active python generar_hogares.py
+```
+
+Esto debe producir:
+
+- `output/datos_hogares.xlsx` — Excel con datos transformados
+- `output/datos_hogares.feather` — feather genérico
+- `output/datos_transformados.feather` — feather con DatetimeIndex
+- `output/charts/*.png` — 17 gráficos
+- `output/tables/*.feather` — 3 tablas
+- `output/informe_hogares.docx` — informe Word
+
 ## Convenciones del código
 
 ### Idioma

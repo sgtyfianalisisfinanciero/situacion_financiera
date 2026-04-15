@@ -1,0 +1,187 @@
+# Plantilla del informe Word de hogares.
+#
+# Usa los custom tags del TemplateLoader de tesorotools.
+# Las rutas en `imports` son relativas a este fichero.
+
+imports:
+  image: ../output/charts
+  table: ../output/tables
+
+report: !report
+  title: !title
+    title: "Situación Financiera de los Hogares"
+
+  # --------------------------------------------------
+  # Resumen ejecutivo (marcadores para el analista)
+  # --------------------------------------------------
+
+  resumen: !section
+    title: "Resumen"
+    p1: !text
+      text: "[INSERTAR COMENTARIO: evolución del crédito hipotecario y al consumo]"
+    p2: !text
+      text: "[INSERTAR COMENTARIO: tipos de interés y Euríbor]"
+    p3: !text
+      text: "[INSERTAR COMENTARIO: cuentas financieras y composición de activos]"
+    p4: !text
+      text: "[INSERTAR COMENTARIO: dudosidad y calidad crediticia]"
+
+  # --------------------------------------------------
+  # Gráficos: Cuentas financieras
+  # --------------------------------------------------
+
+  cuentas_financieras: !section
+    title: "Cuentas financieras"
+
+    row_cf_0: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      cap_nec_financiacion.png: !image
+        title: "Capacidad/necesidad de financiación"
+        subtitle: "Porcentaje sobre la renta bruta disponible"
+      ahorro_bruto.png: !image
+        title: "Evolución del ahorro bruto"
+        subtitle: "Porcentaje sobre la RBD"
+    source_cf_0: !text
+      text: "Fuente: INE y Banco de España"
+
+    row_cf_1: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      vna_componentes.png: !image
+        title: "Variación neta de activos"
+        subtitle: "Miles de millones de euros"
+      vnp_componentes.png: !image
+        title: "Variación neta de pasivos"
+        subtitle: "Miles de millones de euros"
+    source_cf_1: !text
+      text: "Fuente: Banco de España"
+
+    row_cf_2: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      activos_stock.png: !image
+        title: "Activos financieros de los hogares"
+        subtitle: "Miles de millones de euros"
+      activos_composicion.png: !image
+        title: "Activos sobre activos totales"
+        subtitle: "Porcentaje"
+    source_cf_2: !text
+      text: "Fuente: Banco de España"
+
+    row_cf_3: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      riqueza_neta.png: !image
+        title: "Riqueza financiera neta"
+        subtitle: "Miles de millones de euros"
+      deuda_pib.png: !image
+        title: "Deuda de los hogares"
+        subtitle: "Porcentaje sobre el PIB"
+    source_cf_3: !text
+      text: "Fuente: Banco de España"
+
+    deuda_hogares_yoy.png: !image
+      title: "Variación de la deuda de hogares"
+      subtitle: "Porcentaje interanual"
+      width: 5
+    source_cf_4: !text
+      text: "Fuente: Banco de España"
+
+  # --------------------------------------------------
+  # Gráficos: Crédito a hogares
+  # --------------------------------------------------
+
+  credito: !section
+    title: "Crédito a hogares"
+
+    row_cr_0: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      stock_credito_yoy.png: !image
+        title: "Tasa interanual stock de crédito"
+        subtitle: "Porcentaje"
+      flujos_credito.png: !image
+        title: "Nuevos flujos de crédito"
+        subtitle: "Miles de millones de euros"
+    source_cr_0: !text
+      text: "Fuente: Banco de España"
+
+    renegociaciones.png: !image
+      title: "Renegociaciones del crédito a la vivienda"
+      subtitle: "Millones de euros"
+      width: 5
+    source_cr_1: !text
+      text: "Fuente: Banco de España"
+
+  # --------------------------------------------------
+  # Gráficos: Dudosidad
+  # --------------------------------------------------
+
+  dudosidad: !section
+    title: "Dudosidad"
+
+    dudosidad.png: !image
+      title: "Ratios de dudosidad de la financiación a hogares"
+      subtitle: "Porcentaje"
+      width: 5
+    source_dud: !text
+      text: "Fuente: Banco de España"
+
+  # --------------------------------------------------
+  # Gráficos: Tipos de interés
+  # --------------------------------------------------
+
+  tipos: !section
+    title: "Tipos de interés"
+
+    row_ti_0: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      ti_stock.png: !image
+        title: "Tipo de interés del stock"
+        subtitle: "Porcentaje"
+      tedr_flujos.png: !image
+        title: "TEDR nuevos flujos"
+        subtitle: "Porcentaje"
+    source_ti_0: !text
+      text: "Fuente: Banco de España"
+
+    tedr_vivienda_tipo.png: !image
+      title: "Tipos nuevas operaciones vivienda"
+      subtitle: "Porcentaje"
+      width: 5
+    source_ti_1: !text
+      text: "Fuente: Banco de España"
+
+    tedr_renegociaciones.png: !image
+      title: "TEDR renegociaciones"
+      subtitle: "Porcentaje"
+      width: 5
+    source_ti_2: !text
+      text: "Fuente: Banco de España"
+
+  # --------------------------------------------------
+  # Tablas de datos
+  # --------------------------------------------------
+
+  datos: !section
+    title: "Datos"
+
+    credito_stocks: !table
+      title: "Stock de crédito a hogares"
+      index_name: true
+
+    tipos_interes: !table
+      title: "Tipos de interés"
+      index_name: true
+
+    cuentas_financieras: !table
+      title: "Cuentas financieras de los hogares"
+      index_name: true

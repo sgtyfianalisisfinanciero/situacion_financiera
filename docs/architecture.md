@@ -6,320 +6,201 @@ ecosistema de la subdirección (diariospython, tesorotools, series_bbdd).
 
 ## Visión general
 
-El proyecto sigue una arquitectura en seis capas: un **provider**
-que sabe descargar datos de una fuente externa, un **store** que
-gestiona la persistencia local con actualizaciones incrementales,
-un **pipeline de transformaciones** que convierte los datos crudos
-en las magnitudes que necesita el informe, unos **artists** que
-generan gráficos PNG, un **report** que ensambla el documento
-Word, y un **orquestador** que conecta todo.
+El proyecto sigue una arquitectura en capas donde cada pieza tiene
+una responsabilidad clara: un **provider** descarga datos de una
+fuente externa, un **store** gestiona la persistencia local con
+actualizaciones incrementales, un **pipeline** convierte los datos
+crudos en las magnitudes del informe, unos **artists** generan
+gráficos PNG, un **generador de tablas** produce feathers
+formateados, y un **template YAML** define la estructura del
+documento Word. El **orquestador** (`generar_hogares.py`) conecta
+todo.
 
-El provider, el store y el pipeline no se conocen entre sí. El
-orquestador es el único que sabe de todos. Esto permite cambiar
-la fuente de datos sin tocar las transformaciones, o añadir una
-nueva transformación sin tocar la descarga.
+El provider, el store y el pipeline provienen de tesorotools. Lo
+que es local del proyecto es: las reglas concretas de transformación,
+la configuración de gráficos/tablas, el template del Word, y el
+store (que tiene estrategia de persistencia específica de hogares).
 
 ```mermaid
 graph LR
-    YAML[instruments.yaml] --> O[generar_hogares.py]
-    O --> P[BdeProvider]
-    O --> S[SeriesStore]
-    P -- "fetch(codes, start)" --> API[API BdE]
-    API -- "JSON" --> P
-    P -- "DataFrame crudo" --> S
-    S -- "load/save" --> F[store feather]
-    S -- "DataFrame crudo" --> O
-    O -- "renombrar columnas" --> T[pipeline/engine]
-    T -- "apply rules" --> R[pipeline/rules]
-    R -- "DataFrame transformado" --> O
-    O --> XLS[datos_hogares.xlsx]
-    O --> FT[datos_hogares.feather]
-    O -- "charts.yaml + feather" --> C[src/charts.py]
-    C -- "LinePlot" --> TT[tesorotools.artists]
-    C -- "Stacked*Plot" --> SA[src/artists/stacked.py]
-    TT --> PNG[output/charts/*.png]
-    SA --> PNG
+    INST[instruments.yaml] --> O[generar_hogares.py]
+    O --> P[tesorotools BdeProvider]
+    O --> S[SeriesStore local]
+    P -- "fetch" --> API[API BdE]
+    S -- "store_bde.feather" --> S
+    O -- "renombrar + transformar" --> TT[tesorotools pipeline]
+    TT --> DF[DataFrame 124 cols]
+    DF --> XLS[datos_hogares.xlsx]
+    DF --> FT[datos_hogares.feather]
+    DF --> CF[datos_transformados.feather]
+    CF --> CH[src/charts.py]
+    CF --> TB[src/tables.py]
+    CH -- "charts.yaml" --> PNG[output/charts/*.png]
+    TB -- "tables.yaml" --> TBF[output/tables/*.feather]
     PNG --> RP[src/report.py]
-    RP -- "Report/Section/Images" --> TR[tesorotools.render]
-    TR --> DOCX[informe_hogares.docx]
+    TBF --> RP
+    RP -- "template.yaml" --> DOCX[informe_hogares.docx]
 ```
 
-## El provider: cómo se descargan los datos
+## El provider: BdeProvider (tesorotools)
 
-Todos los providers implementan la misma interfaz abstracta
-(`DataProvider`, definida en `src/providers/base.py`):
+El proyecto usa `BdeProvider` de `tesorotools.providers.bde`.
+La interfaz abstracta `DataProvider` define dos métodos:
 
-- `fetch(codes, start, end)` — descarga series para un rango de
-  fechas. Devuelve un DataFrame con DatetimeIndex y una columna por
-  serie.
-- `is_available()` — comprueba si el servicio externo responde.
+- `fetch(codes, start, end)` — descarga series para un rango
+  de fechas.
+- `is_available()` — comprueba si el servicio responde.
 
-Esta interfaz se diseñó deliberadamente simple y general. La del
-proyecto diariospython (`download(date, skip)`) estaba ajustada al
-patrón de snapshots intradía de Eikon, que no aplica aquí. Con
-`fetch(codes, start, end)` se cubren ambos patrones: para Eikon se
-pide un rango de un solo día, para el BdE se pide el histórico
-completo o un rango de meses.
+`BdeProvider` tiene dos particularidades:
 
-La interfaz `DataProvider` tiene vocación de migrar a tesorotools en
-el futuro. Cuando eso ocurra, el `BdeProvider` de este proyecto y el
-`EikonProvider` del diario implementarán la misma ABC, y cualquier
-proyecto nuevo podrá usar cualquier provider sin conocer sus detalles.
+**Batching**: la API del BdE acepta múltiples series por
+petición, pero con demasiadas puede dar timeout. El provider
+divide en lotes de 10.
 
-```mermaid
-classDiagram
-    class DataProvider {
-        <<abstract>>
-        +fetch(codes, start, end) DataFrame
-        +is_available() bool
-    }
-    class BdeProvider {
-        -_language: str
-        -_timeout: int
-        +fetch(codes, start, end) DataFrame
-        +is_available() bool
-    }
-    class EikonProvider {
-        -_registry: InstrumentRegistry
-        +fetch(codes, start, end) DataFrame
-        +is_available() bool
-    }
-    DataProvider <|-- BdeProvider : implements
-    DataProvider <|-- EikonProvider : future
-```
+**Rangos restringidos**: la API solo acepta `"30M"`, `"60M"` y
+`"MAX"`. El provider traduce automáticamente el `start` al
+rango más pequeño que lo cubra.
 
-### BdeProvider
-
-La implementación concreta para el Banco de España
-(`src/providers/bde.py`) tiene dos particularidades:
-
-**Batching**: la API del BdE acepta múltiples series en una sola
-petición, pero con demasiadas puede dar timeout. El provider divide
-las peticiones en lotes de 10 series.
-
-**Rangos restringidos**: la API no acepta rangos arbitrarios de
-fechas. Solo acepta `"30M"` (30 meses), `"60M"` (60 meses) y `"MAX"`
-(todo el histórico). El provider traduce automáticamente el parámetro
-`start` al rango más pequeño que lo cubra, y luego recorta el
-DataFrame resultante para respetar la fecha solicitada.
-
-### Sobre las series DCF del BCE
+### Series DCF del BCE
 
 Las cuatro series de stocks de crédito (`DCF_M.N.ES...`) son
-originalmente del Banco Central Europeo. Sin embargo, el BdE las
-redistribuye a través de su propia API, de modo que se descargan
-exactamente igual que las series propias del BdE. Esto simplifica
-el proyecto: un solo provider cubre las 53 series.
-
-El paquete R `ecb` que cargaban los scripts originales nunca se
-usaba realmente; toda la descarga pasaba por `bdeseries`, que
-también obtiene estas series del BdE.
+del BCE pero el BdE las redistribuye. Un solo provider cubre
+las 59 series del catálogo.
 
 ## El store: persistencia incremental
 
-El `SeriesStore` (`src/store.py`) gestiona un único fichero feather
-donde las filas son fechas y las columnas son códigos de series.
+`SeriesStore` (`src/store.py`) gestiona `output/store_bde.feather`
+— un fichero donde las filas son fechas y las columnas son códigos
+BdE crudos. El store implementa actualización incremental:
 
-El proyecto está pensado para ejecutarse trimestralmente. No tiene
-sentido descargar décadas de histórico cada vez. El store implementa
-actualización incremental:
-
-1. En la primera ejecución (sin feather previo), descarga todo el
-   histórico y lo guarda.
-2. En ejecuciones sucesivas, lee el feather existente, calcula qué
-   datos faltan, y pide al provider solo los datos nuevos más una
-   ventana de lookback configurable para capturar revisiones
-   estadísticas.
-3. Fusiona los datos nuevos con los existentes: donde hay
-   solapamiento, los datos frescos prevalecen (por si hubo
-   revisiones).
+1. Primera ejecución: descarga todo el histórico.
+2. Ejecuciones sucesivas: descarga solo datos nuevos + lookback.
+3. Fusiona: datos frescos prevalecen sobre antiguos.
 
 ```mermaid
 flowchart TD
     A{Existe feather?} -->|No| B[Descargar histórico completo]
     A -->|Sí| C[Leer feather existente]
-    C --> D[Calcular fecha inicio = último dato - lookback]
-    D --> E[Descargar desde fecha inicio]
-    E --> F[Fusionar: datos frescos prevalecen]
+    C --> D[Calcular inicio = último dato - lookback]
+    D --> E[Descargar desde inicio]
+    E --> F[Fusionar: frescos prevalecen]
     B --> G[Guardar feather]
     F --> G
-    C --> H{Series nuevas en catálogo?}
+    C --> H{Series nuevas?}
     H -->|Sí| I[Descargar histórico de las nuevas]
     I --> F
     H -->|No| F
 ```
 
-El lookback se configura con el flag `--lookback` (por defecto 4
-trimestres, es decir, un año hacia atrás). Se puede poner a 0 para
-no re-verificar datos previos, o usar `--full` para forzar una
-re-descarga completa.
-
-El store es código local del proyecto, no forma parte de tesorotools.
-Cada proyecto del ecosistema puede tener su propia estrategia de
-persistencia.
+El store trabaja exclusivamente con códigos BdE. El renombrado
+a IDs canónicos ocurre después, en el orquestador. Esto evita
+contaminar el store con datos transformados (problema que
+ocurrió inicialmente cuando el export sobreescribía el store).
 
 ## El pipeline de transformaciones
 
-El pipeline (`src/pipeline/`) tiene dos módulos:
+El motor (`TransformationRule` + `apply_transformations`) viene
+de `tesorotools.pipeline.engine`. Las factories de reglas
+(`scale_rule`, `sum_rule`, `ratio_rule`, `yoy_rule`,
+`rolling_sum_rule`) vienen de `tesorotools.pipeline.rules`.
 
-**engine.py** contiene el motor genérico, replicado del proyecto
-diariospython. Su pieza central es el dataclass
-`TransformationRule`, que agrupa un nombre de salida, una lista de
-dependencias, y una función de cálculo pura. La función
-`apply_transformations` aplica las reglas secuencialmente sobre un
-DataFrame, saltándose las que tengan dependencias ausentes.
+Las reglas concretas de hogares (`src/pipeline/rules.py`) están
+organizadas en seis familias, ejecutadas en este orden:
 
-**rules.py** contiene las reglas específicas de hogares, organizadas
-en cinco familias:
+1. **Normalización** (`_BN`): K_EUR/M_EUR/BN_EUR a miles de
+   millones. Series PCT se ignoran.
+2. **Agregaciones**: totales derivados (flujos totales, otros
+   activos + préstamos).
+3. **Composición** (`CF_PCT_*`): cada activo como fracción del
+   total.
+4. **Dudosidad** (`DUDOSIDAD_*`): ratio dudosos/crédito total
+   para hogares, vivienda, consumo.
+5. **Tasas interanuales** (`_YOY`): 12 periodos para mensuales,
+   4 para trimestrales.
+6. **Sumas móviles** (`_4Q`): acumulado de 4 trimestres.
 
-- **Normalización de unidades**: lee el campo `unit` de cada serie
-  en el catálogo (K_EUR, M_EUR, BN_EUR) y genera una columna con
-  sufijo `_BN` convertida a miles de millones de euros. Las series
-  en porcentaje (PCT) se ignoran.
-- **Agregaciones**: totales derivados (flujos totales, otros activos
-  + préstamos).
-- **Composición**: cada categoría de activo como fracción del total.
-- **Tasas interanuales**: variación año sobre año (12 periodos para
-  mensuales, 4 para trimestrales). Sufijo `_YOY`.
-- **Sumas móviles**: acumulado de 4 trimestres para anualizar flujos
-  trimestrales. Sufijo `_4Q`.
-
-El orden importa: primero la normalización (porque las agregaciones
-y ratios dependen de las columnas `_BN`), luego agregaciones, luego
-composición y tasas (que dependen de las agregaciones).
-
-El motor tiene vocación de migrar a tesorotools. Las reglas se
-quedan aquí porque son conocimiento de negocio del informe.
-
-## El orquestador: generar_hogares.py
-
-El script principal conecta las piezas:
-
-1. Lee el catálogo `series/instruments.yaml`.
-2. Extrae el mapeo ID canónico a código BdE.
-3. Pasa los códigos BdE al store, que decide si hacer descarga
-   completa o incremental.
-4. Renombra las columnas del DataFrame de códigos BdE a IDs
-   canónicos.
-5. Aplica las reglas de transformación (normalización, agregaciones,
-   ratios, tasas, sumas móviles). Esto genera 36 columnas derivadas
-   a partir de las 53 originales.
-6. Exporta el DataFrame transformado (89 columnas) a Excel y
-   feather.
-
-Los IDs canónicos (como `STOCK_VIVIENDA`) se usan en el DataFrame
-de salida y en todo el código aguas abajo. Los códigos del proveedor
-(como `DCF_M.N.ES...`) solo aparecen en el catálogo y dentro del
-provider.
-
-## El catálogo: instruments.yaml
-
-Sigue el mismo esquema que el proyecto diariospython: cada serie
-tiene un ID canónico como clave, un `display_name` legible, y un
-bloque `providers` con la configuración específica del proveedor.
-
-Esto facilita una futura migración a tesorotools: el
-`InstrumentRegistry` del diario ya sabe leer este formato.
-
-## Generación de gráficos
-
-Los gráficos se definen declarativamente en
-`series/charts.yaml`. Cada entrada tiene un ID (que se
-convierte en el nombre del PNG), un tipo de gráfico, las
-series a representar, formato de ejes y opciones de leyenda.
-
-El driver `src/charts.py` lee el YAML, carga el feather
-transformado y despacha cada gráfico al artist adecuado:
-
-- **`line`** — usa `tesorotools.artists.line_plot.LinePlot`.
-  Para sortear el problema de frecuencias mixtas (series
-  mensuales y trimestrales en el mismo DataFrame), el driver
-  extrae las columnas relevantes, elimina las filas donde
-  todas son NaN, y guarda un feather temporal limpio que
-  LinePlot puede leer sin puntos invisibles.
-
-- **`stacked_area`** y **`stacked_bar`** — usan las clases
-  locales `StackedAreaPlot` y `StackedBarPlot` de
-  `src/artists/stacked.py`. Siguen la misma interfaz que
-  `LinePlot` (constructor + método `plot()`) y reutilizan
-  el estilo visual de tesorotools (mplstyle, spines, baseline,
-  formato de ejes). Están diseñadas para migrar a tesorotools
-  cuando el paquete las absorba.
+El orden importa: normalización primero (las demás dependen de
+`_BN`), agregaciones antes de composición (que divide por el
+total), dudosidad antes de tasas (usa series crudas, no `_BN`).
 
 ### Frecuencias mixtas
 
 El DataFrame combina series mensuales (crédito, tipos) y
-trimestrales (cuentas financieras) en un solo índice
-temporal. Las series trimestrales tienen NaN en las fechas
-mensuales intermedias. Esto tiene dos implicaciones:
+trimestrales (cuentas financieras). Las trimestrales tienen
+NaN en fechas mensuales. Esto afecta a:
 
-1. **Transformaciones**: `shift(n)` y `rolling(n)` operan
-   sobre filas, no periodos. Las reglas de `_yoy_rule` y
-   `_rolling_sum_rule` aplican `dropna()` antes de operar
-   para que `n` cuente observaciones reales.
+- **`shift(n)` y `rolling(n)`**: operan sobre filas, no
+  periodos. Las factories de tesorotools aplican `dropna()`
+  antes para que `n` cuente observaciones reales.
+- **Gráficos**: matplotlib dibuja puntos invisibles en fechas
+  aisladas. El driver limpia NaN antes de pasar datos a
+  LinePlot.
 
-2. **Gráficos**: matplotlib dibuja puntos invisibles en
-   fechas aisladas (rodeadas de NaN). El driver de gráficos
-   elimina filas all-NaN antes de pasar datos a LinePlot.
+## Generación de gráficos
+
+Los gráficos se definen en `series/charts.yaml`. El driver
+`src/charts.py` despacha cada uno al artist de tesorotools:
+
+- **`line`** → `tesorotools.artists.line_plot.LinePlot`
+  (acepta DataFrame directo).
+- **`stacked_area`** → `tesorotools.artists.stacked.StackedAreaPlot`.
+- **`stacked_bar`** → `tesorotools.artists.stacked.StackedBarPlot`.
+
+## Generación de tablas
+
+Las tablas se definen en `series/tables.yaml`. El driver
+`src/tables.py` extrae los últimos N periodos de cada serie,
+formatea los números (separador de miles, decimales), y guarda
+feathers que `tesorotools.render.Table` consume.
 
 ## Generación del informe Word
 
-`src/report.py` construye el documento Word usando el módulo
-`tesorotools.render`: `Report`, `Section`, `Image`, `Images`,
-`Title` y `Text`. La estructura del documento se define en
-código (no en YAML) porque el layout es específico del
-informe de hogares.
+La estructura del documento se define en `series/template.yaml`
+usando los custom tags del `TemplateLoader` de tesorotools:
+`!report`, `!section`, `!image`, `!images`, `!table`, `!text`,
+`!title`. El template referencia los PNGs y feathers generados
+por los pasos anteriores.
 
-El informe tiene tres secciones (Cuentas financieras,
-Crédito a hogares, Tipos de interés) con gráficos organizados
-en filas de 1-2 imágenes. Cada fila tiene una nota de fuente.
-Los gráficos faltantes (por datos no disponibles) se omiten
-sin error.
+`src/report.py` carga el template, construye el `Report`, y
+lo renderiza a Word con `python-docx`.
+
+## Ficheros de salida
+
+| Fichero | Contenido | Quién lo escribe |
+|---|---|---|
+| `store_bde.feather` | 59 columnas, códigos BdE crudos | SeriesStore |
+| `datos_hogares.xlsx` | 124 columnas, IDs canónicos | orquestador |
+| `datos_hogares.feather` | Igual, con columna `date` | orquestador |
+| `datos_transformados.feather` | Igual, con DatetimeIndex | orquestador |
+| `charts/*.png` | 17 gráficos | src/charts.py |
+| `tables/*.feather` | 3 tablas formateadas | src/tables.py |
+| `informe_hogares.docx` | Word final | src/report.py |
+
+`datos_hogares.feather` (con columna `date`) es para consumo
+genérico. `datos_transformados.feather` (con DatetimeIndex) es
+para los artists y tablas que necesitan indexar por fecha.
 
 ## Relación con el ecosistema
 
-Este proyecto es un consumidor potencial de tesorotools, no una
-dependencia. Actualmente no importa nada de tesorotools. La
-estrategia es:
+Hogares consume de tesorotools:
 
-- La ABC `DataProvider` se diseña aquí y se migrará a tesorotools
-  cuando se consolide el paquete.
-- El `BdeProvider` se extraerá a tesorotools cuando otros proyectos
-  lo necesiten.
-- El `SeriesStore` se queda aquí porque es específico de este
-  proyecto.
-- El formato de `instruments.yaml` es compatible con el del diario
-  para facilitar la convergencia futura.
-- `StackedAreaPlot` y `StackedBarPlot` están pendientes de migrar
-  a `tesorotools.artists` (ver nota en `src/artists/stacked.py`).
+- `DataProvider`, `BdeProvider` (providers)
+- `TransformationRule`, `apply_transformations` (pipeline)
+- `scale_rule`, `sum_rule`, `ratio_rule`, `yoy_rule`,
+  `rolling_sum_rule` (factories)
+- `LinePlot`, `StackedAreaPlot`, `StackedBarPlot` (artists)
+- `Report`, `Section`, `Image`, `Images`, `Table`, `Text`,
+  `Title` (render)
+- `TemplateLoader` (YAML con custom tags)
 
-```mermaid
-graph TB
-    subgraph "Futuro tesorotools"
-        ABC[DataProvider ABC]
-        BDE[BdeProvider]
-        EIKON[EikonProvider]
-        REG[InstrumentRegistry]
-    end
+Lo que es local del proyecto:
 
-    subgraph "Proyecto hogares"
-        STORE[SeriesStore]
-        GEN[generar_hogares.py]
-        INST[instruments.yaml]
-    end
+- `SeriesStore` — persistencia incremental específica
+- `src/pipeline/rules.py` — reglas concretas de hogares
+- `src/charts.py` — driver de gráficos (limpieza de NaN)
+- `src/tables.py` — generador de tablas formateadas
+- `src/report.py` — carga template + render
+- `series/*.yaml` — catálogo, gráficos, tablas, template
 
-    subgraph "Proyecto diario"
-        GEND[generar_diario.py]
-        INSTD[instruments.yaml]
-    end
-
-    ABC --> BDE
-    ABC --> EIKON
-    GEN --> BDE
-    GEN --> STORE
-    GEN --> INST
-    GEND --> EIKON
-    GEND --> INSTD
-    REG -.-> INST
-    REG -.-> INSTD
-```
+El formato de `instruments.yaml` es compatible con el del
+diario para facilitar convergencia futura.

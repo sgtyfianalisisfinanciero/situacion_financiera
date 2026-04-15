@@ -1,6 +1,6 @@
 # Diccionario de datos
 
-Referencia completa de las 53 series temporales que descarga el
+Referencia completa de las 59 series temporales que descarga el
 proyecto. Cada serie tiene un ID canónico (usado en el código y como
 nombre de columna en los DataFrames), un código de proveedor (el
 código real que se envía a la API del BdE), y una descripción de qué
@@ -160,6 +160,30 @@ Series complementarias de distintas fuentes y frecuencias.
 | `CAP_NEC_FINANCIACION` | `DSPC102020CB90000_SS14A_TPRB6B000.T` | Trimestral | Millones EUR | Capacidad (+) o necesidad (-) de financiación de los hogares |
 | `AHORRO_BRUTO` | `DSPC102020CB8B000_SS14A_TPRB6B000.T` | Trimestral | Millones EUR | Ahorro bruto de los hogares |
 
+## Créditos dudosos
+
+Fuente: BdE (cuadro be0413, Entidades de crédito y EFC).
+Frecuencia mensual. Unidades: miles de euros.
+
+Datos de crédito total y créditos dudosos por finalidad, usados
+para calcular los ratios de dudosidad.
+
+### Crédito total por finalidad
+
+| ID canónico | Código BdE | Descripción |
+|---|---|---|
+| `CREDITO_HOGARES_TOTAL` | `D_MEE62000` | Financiación total a hogares |
+| `CREDITO_VIVIENDA_TOTAL` | `D_MEE62100` | Crédito para adquisición de vivienda |
+| `CREDITO_CONSUMO_TOTAL` | `D_MEE62300` | Crédito al consumo |
+
+### Créditos dudosos por finalidad
+
+| ID canónico | Código BdE | Descripción |
+|---|---|---|
+| `DUDOSOS_HOGARES` | `D_MEADU201` | Créditos dudosos — hogares total |
+| `DUDOSOS_VIVIENDA` | `D_MEADU210` | Créditos dudosos — adquisición de vivienda |
+| `DUDOSOS_CONSUMO` | `D_MEADU226` | Créditos dudosos — consumo |
+
 ## Nota sobre las unidades
 
 Los datos llegan de la API en las unidades indicadas arriba, sin
@@ -168,15 +192,16 @@ millones), mientras que los flujos DN llegan en millones de euros.
 Los tipos de interés llegan como porcentaje directo (ej. 2.77).
 
 El pipeline de transformaciones (`src/pipeline/rules.py`) convierte
-estas unidades crudas en magnitudes normalizadas:
+estas unidades crudas en magnitudes derivadas:
 
 - **`_BN`**: miles de millones de euros (K_EUR ÷ 1e6, M_EUR ÷ 1e3,
   BN_EUR sin cambio). Series en PCT se ignoran.
+- **`FLUJOS_TOTAL_BN`**, **`CF_OTROS_Y_PRESTAMOS_BN`**:
+  agregaciones por suma (con `min_count=1` para propagar NaN).
+- **`CF_PCT_*`**: composición de activos como fracción del total.
+- **`DUDOSIDAD_*`**: ratio dudosos/crédito total (hogares,
+  vivienda, consumo). Valores decimales (0.03 = 3%).
 - **`_YOY`**: tasa de variación interanual (12 periodos para
   mensuales, 4 para trimestrales). Opera sobre observaciones
   no-NaN para manejar frecuencias mixtas.
 - **`_4Q`**: suma móvil de 4 trimestres para anualizar flujos.
-- **`CF_PCT_*`**: composición de activos como fracción del total.
-- **`FLUJOS_TOTAL_BN`**, **`CF_OTROS_Y_PRESTAMOS_BN`**:
-  agregaciones por suma (con `min_count=1` para propagar NaN
-  correctamente).

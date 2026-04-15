@@ -1,12 +1,8 @@
 """Chart generation driver.
 
 Reads ``series/charts.yaml``, generates one PNG per entry
-using the appropriate artist (tesorotools ``LinePlot`` for
-line charts, local ``StackedAreaPlot`` / ``StackedBarPlot``
-for stacked charts).
-
-All artists receive a pre-loaded DataFrame so the feather
-is read only once.
+using the appropriate tesorotools artist (``LinePlot``,
+``StackedAreaPlot``, ``StackedBarPlot``).
 
 Mixed-frequency handling
 ------------------------
@@ -16,9 +12,6 @@ non-quarterly dates.  Before plotting, each chart's columns
 are extracted and rows where *all* are NaN are dropped.
 This prevents matplotlib from drawing invisible single-dot
 line segments on NaN-surrounded dates.
-
-For ``LinePlot`` (which requires a feather path), a
-per-chart temporary feather is written with clean data.
 """
 
 import logging
@@ -28,14 +21,10 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from tesorotools.artists.line_plot import Format, Legend, LinePlot  # pyright: ignore[reportMissingTypeStubs]
-
-from src.artists.stacked import StackedAreaPlot, StackedBarPlot
+from tesorotools.artists.line_plot import Format, Legend, LinePlot
+from tesorotools.artists.stacked import StackedAreaPlot, StackedBarPlot
 
 logger = logging.getLogger(__name__)
-
-#: Temporary feather used to feed LinePlot clean data.
-_TEMP_FEATHER = "_chart_data.feather"
 
 
 def _make_format(cfg: dict[str, Any]) -> Format:
@@ -80,21 +69,14 @@ def _plot_line(
     df: pd.DataFrame,
     out_dir: Path,
 ) -> None:
-    """Generate a line chart via tesorotools LinePlot.
-
-    Writes a temporary feather with clean (NaN-dropped)
-    data so that LinePlot sees only valid observations.
-    """
+    """Generate a line chart via tesorotools LinePlot."""
     cols = list(cfg["series"].keys())
     clean = _clean_slice(df, cols, cfg.get("start_date"), cfg.get("end_date"))
-
-    temp_path = out_dir / _TEMP_FEATHER
-    clean.to_feather(temp_path)
 
     out_path = out_dir / f"{chart_id}.png"
     lp = LinePlot(
         out_path=out_path,
-        data_path=temp_path,
+        data=clean,
         series=cfg["series"],
         scale=cfg.get("scale", 1),
         base_100=cfg.get("base_100", False),
@@ -103,8 +85,6 @@ def _plot_line(
         legend=_make_legend(cfg),
     )
     lp.plot()
-
-    temp_path.unlink(missing_ok=True)
     logger.info("Chart: %s (line)", out_path.name)
 
 
@@ -197,5 +177,9 @@ def generate_charts(
         except Exception:
             logger.exception("Failed to generate %s", chart_id)
 
-    logger.info("Charts: %d/%d generated", len(generated), len(charts))
+    logger.info(
+        "Charts: %d/%d generated",
+        len(generated),
+        len(charts),
+    )
     return generated

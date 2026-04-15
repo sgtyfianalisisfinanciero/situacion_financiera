@@ -1,0 +1,51 @@
+# Definiciones de tablas para el informe de hogares.
+#
+# Cada clave se convierte en el nombre del feather ({clave}.feather).
+# El renderer Table de tesorotools.render los lee.
+
+tables:
+
+  credito_stocks:
+    title: "Stock de crédito a hogares (miles de millones EUR)"
+    periods: 12
+    frequency: monthly
+    decimals: 1
+    series:
+      STOCK_PRESTAMOS_BN: "Total"
+      STOCK_VIVIENDA_BN: "Vivienda"
+      STOCK_CONSUMO_BN: "Consumo"
+      STOCK_OTROS_BN: "Otros fines"
+    yoy_series:
+      STOCK_PRESTAMOS_YOY: "Total (% ia)"
+      STOCK_VIVIENDA_YOY: "Vivienda (% ia)"
+      STOCK_CONSUMO_YOY: "Consumo (% ia)"
+      STOCK_OTROS_YOY: "Otros (% ia)"
+    yoy_decimals: 1
+    yoy_scale: 100
+
+  tipos_interes:
+    title: "Tipos de interés (%)"
+    periods: 12
+    frequency: monthly
+    decimals: 2
+    series:
+      TI_STOCK_VIVIENDA: "Stock vivienda"
+      TI_STOCK_CONSUMO: "Stock consumo"
+      TEDR_VIVIENDA: "TEDR vivienda"
+      TEDR_CONSUMO: "TEDR consumo"
+      TEDR_OTROS: "TEDR otros"
+      TEDR_VARIABLE: "TEDR variable"
+      TEDR_FIJO: "TEDR fijo"
+
+  cuentas_financieras:
+    title: "Cuentas financieras de los hogares"
+    periods: 8
+    frequency: quarterly
+    decimals: 1
+    series:
+      CF_TOTAL_ACTIVO_BN: "Activos (mM EUR)"
+      CF_DEUDA_HOGARES_BN: "Deuda (mM EUR)"
+      CF_RIQUEZA_NETA_BN: "Riqueza neta (mM EUR)"
+      CF_DEUDA_PIB: "Deuda/PIB (%)"
+      CAP_NEC_FINANCIACION: "Cap./nec. financiación (%)"
+      AHORRO_BRUTO: "Ahorro bruto (%)"

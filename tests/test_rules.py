@@ -6,13 +6,16 @@ import unittest
 
 import pandas as pd
 
-from src.pipeline.engine import apply_transformations
+from tesorotools.pipeline.engine import apply_transformations
+from tesorotools.pipeline.rules import (
+    ratio_rule,
+    rolling_sum_rule,
+    scale_rule,
+    sum_rule,
+    yoy_rule,
+)
+
 from src.pipeline.rules import (
-    _ratio_rule,
-    _rolling_sum_rule,
-    _scale_rule,
-    _sum_rule,
-    _yoy_rule,
     aggregation_rules,
     all_rules,
     composition_rules,
@@ -44,7 +47,7 @@ def _quarterly_df(cols: dict[str, list[float]]) -> pd.DataFrame:
 class TestScaleRule(unittest.TestCase):
     def test_divides(self) -> None:
         df = _monthly_df({"X": [1000.0, 2000.0]})
-        rule = _scale_rule("X_BN", "X", 1e3)
+        rule = scale_rule("X_BN", "X", 1e3)
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["X_BN"].iloc[0], 1.0)
         self.assertAlmostEqual(result["X_BN"].iloc[1], 2.0)
@@ -53,7 +56,7 @@ class TestScaleRule(unittest.TestCase):
 class TestSumRule(unittest.TestCase):
     def test_sums(self) -> None:
         df = _monthly_df({"A": [1.0, 2.0], "B": [10.0, 20.0]})
-        rule = _sum_rule("T", ["A", "B"])
+        rule = sum_rule("T", ["A", "B"])
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["T"].iloc[0], 11.0)
 
@@ -61,7 +64,7 @@ class TestSumRule(unittest.TestCase):
 class TestRatioRule(unittest.TestCase):
     def test_ratio(self) -> None:
         df = _monthly_df({"N": [50.0], "D": [200.0]})
-        rule = _ratio_rule("R", "N", "D")
+        rule = ratio_rule("R", "N", "D")
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["R"].iloc[0], 0.25)
 
@@ -70,7 +73,7 @@ class TestYoyRule(unittest.TestCase):
     def test_yoy_monthly(self) -> None:
         vals = [100.0] * 12 + [110.0]
         df = _monthly_df({"X": vals})
-        rule = _yoy_rule("X_YOY", "X", 12)
+        rule = yoy_rule("X_YOY", "X", 12)
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["X_YOY"].iloc[-1], 0.10)
         # First 12 should be NaN
@@ -79,7 +82,7 @@ class TestYoyRule(unittest.TestCase):
     def test_yoy_quarterly(self) -> None:
         vals = [100.0] * 4 + [120.0]
         df = _quarterly_df({"X": vals})
-        rule = _yoy_rule("X_YOY", "X", 4)
+        rule = yoy_rule("X_YOY", "X", 4)
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["X_YOY"].iloc[-1], 0.20)
 
@@ -87,7 +90,7 @@ class TestYoyRule(unittest.TestCase):
 class TestRollingSumRule(unittest.TestCase):
     def test_rolling_4(self) -> None:
         df = _quarterly_df({"X": [10.0, 20.0, 30.0, 40.0, 50.0]})
-        rule = _rolling_sum_rule("X_4Q", "X", 4)
+        rule = rolling_sum_rule("X_4Q", "X", 4)
         result = apply_transformations(df, [rule])
         # First 3 should be NaN
         self.assertTrue(pd.isna(result["X_4Q"].iloc[0]))
