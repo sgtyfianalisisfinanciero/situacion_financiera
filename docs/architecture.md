@@ -34,11 +34,11 @@ graph LR
     DF --> FT[datos_hogares.feather]
     DF --> CF[datos_transformados.feather]
     CF --> CH[src/charts.py]
-    CF --> TB[src/tables.py]
+    CF --> CH
     CH -- "charts.yaml" --> PNG[output/charts/*.png]
-    TB -- "tables.yaml" --> TBF[output/tables/*.feather]
+    CH -- "charts.yaml" --> PNG[output/charts/*.png]
     PNG --> RP[src/report.py]
-    TBF --> RP
+    PNG --> RP
     RP -- "template.yaml" --> DOCX[informe_hogares.docx]
 ```
 
@@ -155,10 +155,14 @@ Los gráficos se definen en `series/charts.yaml`. El driver
 
 ## Generación de tablas
 
-Las tablas se definen en `series/tables.yaml`. El driver
-`src/tables.py` extrae los últimos N periodos de cada serie,
-formatea los números (separador de miles, decimales), y guarda
-feathers que `tesorotools.render.Table` consume.
+## Type curve
+
+El type curve pivota datos mensuales por mes del año con
+una línea por año, permitiendo comparar la evolución
+intra-anual entre distintos años. Soporta acumulación
+(`cumulative: true`) para series como renegociaciones
+acumuladas. Se renderiza con matplotlib directamente
+porque el eje X es categórico (nombres de meses).
 
 ## Generación del informe Word
 
@@ -179,8 +183,7 @@ lo renderiza a Word con `python-docx`.
 | `datos_hogares.xlsx` | ~150 columnas, IDs canónicos | orquestador |
 | `datos_hogares.feather` | Igual, con columna `date` | orquestador |
 | `datos_transformados.feather` | Igual, con DatetimeIndex | orquestador |
-| `charts/*.png` | 25 gráficos | src/charts.py |
-| `tables/*.feather` | 3 tablas formateadas | src/tables.py |
+| `charts/*.png` | 26 gráficos | src/charts.py |
 | `informe_hogares.docx` | Word final | src/report.py |
 
 `datos_hogares.feather` (con columna `date`) es para consumo
@@ -205,7 +208,6 @@ Lo que es local del proyecto:
 - `SeriesStore` — persistencia incremental específica
 - `src/pipeline/rules.py` — reglas concretas de hogares
 - `src/charts.py` — driver de gráficos (limpieza de NaN)
-- `src/tables.py` — generador de tablas formateadas
 - `src/report.py` — carga template + render
 - `series/*.yaml` — catálogo, gráficos, tablas, template
 

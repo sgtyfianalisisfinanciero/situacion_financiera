@@ -13,8 +13,8 @@ from pathlib import Path
 
 from docx import Document
 
-import tesorotools.render  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tesorotools.render.report import Report
+from tesorotools.utils.config import read_config
 from tesorotools.utils.template import TemplateLoader
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,7 @@ logger = logging.getLogger(__name__)
 
 def _load_template(path: Path) -> Report:
     """Load a report template from YAML."""
-    import yaml
-
-    with open(path, encoding="utf-8") as f:
-        config = yaml.load(f, Loader=TemplateLoader)  # noqa: S506
+    config = read_config(path, loader=TemplateLoader)
     return config["report"]  # type: ignore[no-any-return]
 
 

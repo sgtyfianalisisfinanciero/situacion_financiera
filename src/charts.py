@@ -45,7 +45,6 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import yaml
 
@@ -55,7 +54,6 @@ from tesorotools.artists.line_plot import (
     Format,
     Legend,
     LinePlot,
-    style_baseline,
     style_spines,
 )
 from tesorotools.artists.stacked import StackedAreaPlot, StackedBarPlot
@@ -147,6 +145,89 @@ def _resample_annual_recent(
     return result
 
 
+_MONTH_LABELS = [
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+]
+
+
+def _plot_type_curve(
+    chart_id: str,
+    cfg: dict[str, Any],
+    df: pd.DataFrame,
+    out_dir: Path,
+) -> None:
+    """Type curve: one line per year, x = month.
+
+    If ``cumulative: true``, values are accumulated within
+    each year (starts at 0 in January, rises through
+    December).  Otherwise, raw monthly values.
+
+    Uses matplotlib directly (not LinePlot) because the
+    x-axis is categorical (month names), not DatetimeIndex.
+    """
+    col = list(cfg["series"].keys())[0]
+    start_year = int(cfg.get("start_year", 2015))
+    cumulative = cfg.get("cumulative", False)
+
+    clean = df[[col]].dropna()
+    clean = clean.loc[clean.index.year >= start_year]
+
+    # Pivot: rows = month (1-12), cols = year.
+    pivoted = clean.copy()
+    pivoted["month"] = pivoted.index.month
+    pivoted["year"] = pivoted.index.year
+    table = pivoted.pivot_table(index="month", columns="year", values=col)
+    table = table.reindex(range(1, 13))
+
+    if cumulative:
+        table = table.cumsum()
+
+    fmt = _make_format(cfg)
+    legend_cfg = _make_legend(cfg)
+
+    fig = plt.figure(**FIG_CONFIG)  # pyright: ignore[reportUnknownMemberType]
+    ax = fig.add_subplot()
+
+    for year_col in table.columns:
+        vals = table[year_col].dropna()
+        ax.plot(  # pyright: ignore[reportUnknownMemberType]
+            [_MONTH_LABELS[m - 1] for m in vals.index],
+            vals.values,
+            label=str(year_col),
+        )
+
+    style_spines(
+        ax,
+        decimals=fmt.decimals,
+        units=fmt.units,
+        **AX_CONFIG["spines"],
+    )
+
+    ncol = legend_cfg.ncol if legend_cfg else 6
+    sep = legend_cfg.sep if legend_cfg else -0.125
+    ax.legend(  # pyright: ignore[reportUnknownMemberType]
+        loc="upper center",
+        bbox_to_anchor=(0.5, sep),
+        ncol=ncol,
+    )
+
+    out_path = out_dir / f"{chart_id}.png"
+    fig.savefig(out_path)  # pyright: ignore[reportUnknownMemberType]
+    plt.close(fig)
+    logger.info("Chart: %s (type_curve)", out_path.name)
+
+
 def _plot_line(
     chart_id: str,
     cfg: dict[str, Any],
@@ -158,6 +239,10 @@ def _plot_line(
     clean = _clean_slice(df, cols, cfg.get("start_date"), cfg.get("end_date"))
 
     out_path = out_dir / f"{chart_id}.png"
+    kwargs: dict[str, Any] = {}
+    if "series_styles" in cfg:
+        kwargs["series_styles"] = cfg["series_styles"]
+
     lp = LinePlot(
         out_path=out_path,
         data=clean,
@@ -167,6 +252,7 @@ def _plot_line(
         baseline=cfg.get("baseline", False),
         format=_make_format(cfg),
         legend=_make_legend(cfg),
+        **kwargs,
     )
     lp.plot()
     logger.info("Chart: %s (line)", out_path.name)
@@ -181,6 +267,13 @@ def _plot_stacked(
 ) -> None:
     """Generate a stacked chart (area or bar)."""
     out_path = out_dir / f"{chart_id}.png"
+    kwargs: dict[str, Any] = {}
+    for key in ("overlay_series", "bar_width", "x_rotation"):
+        if key in cfg:
+            kwargs[key] = cfg[key]
+    if "figsize" in cfg:
+        kwargs["figsize"] = tuple(cfg["figsize"])
+
     chart = cls(
         out_path=out_path,
         data=df,
@@ -191,102 +284,60 @@ def _plot_stacked(
         baseline=cfg.get("baseline", False),
         format=_make_format(cfg),
         legend=_make_legend(cfg),
+        **kwargs,
     )
     chart.plot()
     logger.info("Chart: %s (%s)", out_path.name, cfg["type"])
 
 
-def _plot_stacked_resampled(
-    chart_id: str,
-    cfg: dict[str, Any],
-    df: pd.DataFrame,
-    out_dir: Path,
-    cls: type,
-) -> None:
-    """Stacked bar chart with annual/quarterly resampling.
+class _ResampledBarPlot(StackedBarPlot):
+    """StackedBarPlot with annual/quarterly resampling.
 
-    Cannot use tesorotools StackedBarPlot directly because
-    the resampled index is string-based (period labels), not
-    DatetimeIndex.  Renders with matplotlib using tesorotools
-    styling helpers for visual consistency.
+    Overrides ``_prepare_data`` to resample quarterly data
+    into annual bars for closed years and quarterly for the
+    most recent year.  Overrides ``_format_xticks`` to use
+    string period labels instead of dates.
+
+    This is an example of the P12 extensibility pattern:
+    only the data preparation and tick formatting change,
+    everything else (bar stacking, overlay, legend, spines)
+    is inherited from tesorotools.
     """
-    cols = list(cfg["series"].keys())
-    clean = _clean_slice(df, cols, cfg.get("start_date"), cfg.get("end_date"))
-    resampled = _resample_annual_recent(clean)
-    scale = cfg.get("scale", 1)
-    if scale != 1:
-        resampled = resampled * scale
 
-    fmt = _make_format(cfg)
-    legend_cfg = _make_legend(cfg)
-    labels = list(cfg["series"].values())
-    x = np.arange(len(resampled))
-
-    fig = plt.figure(  # pyright: ignore[reportUnknownMemberType]
-        figsize=(12, 6), **FIG_CONFIG
-    )
-    ax = fig.add_subplot()
-
-    pos_bottom = np.zeros(len(resampled), dtype=float)
-    neg_bottom = np.zeros(len(resampled), dtype=float)
-
-    for col, label in zip(cols, labels):
-        vals = resampled[col].to_numpy(dtype=float)
-        pos = np.where(vals >= 0, vals, 0.0)
-        neg = np.where(vals < 0, vals, 0.0)
-        color = (
-            ax.bar(  # pyright: ignore[reportUnknownMemberType]
-                x,
-                pos,
-                bottom=pos_bottom,
-                width=0.7,
-                label=label,
-            )
-            .patches[0]
-            .get_facecolor()
+    def _prepare_data(self) -> pd.DataFrame:  # type: ignore[override]
+        """Resample then scale."""
+        cols = list(self.series.keys())
+        overlay_cols = (
+            list(self.overlay_series.keys()) if self.overlay_series else []
         )
-        ax.bar(  # pyright: ignore[reportUnknownMemberType]
-            x,
-            neg,
-            bottom=neg_bottom,
-            width=0.7,
-            color=color,
+        all_cols = cols + overlay_cols
+        start = (
+            pd.Timestamp(self.start_date)
+            if self.start_date
+            else self.data.index.min()
         )
-        pos_bottom += pos
-        neg_bottom += neg
+        end = (
+            pd.Timestamp(self.end_date)
+            if self.end_date
+            else self.data.index.max()
+        )
+        sliced = self.data.loc[start:end, all_cols].dropna(how="all")
+        resampled = _resample_annual_recent(sliced)
+        return resampled * self.scale
 
-    ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]
-    ax.set_xticklabels(  # pyright: ignore[reportUnknownMemberType]
-        list(resampled.index),
-        rotation=45,
-        ha="right",
-    )
-
-    style_spines(
-        ax,
-        decimals=fmt.decimals,
-        units=fmt.units,
-        **AX_CONFIG["spines"],
-    )
-    if cfg.get("baseline", False):
-        style_baseline(ax, 0, **AX_CONFIG["baseline"])
-
-    ncol = legend_cfg.ncol if legend_cfg else 5
-    sep = legend_cfg.sep if legend_cfg else -0.125
-    ax.legend(  # pyright: ignore[reportUnknownMemberType]
-        loc="upper center",
-        bbox_to_anchor=(0.5, sep),
-        ncol=ncol,
-    )
-
-    out_path = out_dir / f"{chart_id}.png"
-    fig.savefig(out_path)  # pyright: ignore[reportUnknownMemberType]
-    plt.close(fig)
-    logger.info(
-        "Chart: %s (%s, resampled)",
-        out_path.name,
-        cfg["type"],
-    )
+    def _format_xticks(  # type: ignore[override]
+        self,
+        ax: Any,
+        plot_data: pd.DataFrame,
+        x: Any,
+    ) -> None:
+        """Use string period labels with rotation."""
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            list(plot_data.index),
+            rotation=self.x_rotation or 45,
+            ha="right",
+        )
 
 
 _TYPE_MAP: dict[str, type] = {
@@ -336,10 +387,18 @@ def generate_charts(
         try:
             if chart_type == "line":
                 _plot_line(chart_id, cfg, df, out_dir)
+            elif chart_type == "type_curve":
+                _plot_type_curve(chart_id, cfg, df, out_dir)
             elif chart_type in _TYPE_MAP:
                 cls = _TYPE_MAP[chart_type]
                 if resample == "annual_recent":
-                    _plot_stacked_resampled(chart_id, cfg, df, out_dir, cls)
+                    _plot_stacked(
+                        chart_id,
+                        cfg,
+                        df,
+                        out_dir,
+                        _ResampledBarPlot,
+                    )
                 else:
                     _plot_stacked(chart_id, cfg, df, out_dir, cls)
             else:

@@ -12,7 +12,7 @@ from tesorotools.pipeline.rules import (
     rolling_sum_rule,
     scale_rule,
     sum_rule,
-    yoy_rule,
+    pct_change_rule,
 )
 
 from src.pipeline.rules import (
@@ -78,7 +78,7 @@ class TestYoyRule(unittest.TestCase):
     def test_yoy_monthly(self) -> None:
         vals = [100.0] * 12 + [110.0]
         df = _monthly_df({"X": vals})
-        rule = yoy_rule("X_YOY", "X", 12)
+        rule = pct_change_rule("X_YOY", "X", 12)
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["X_YOY"].iloc[-1], 0.10)
         # First 12 should be NaN
@@ -87,7 +87,7 @@ class TestYoyRule(unittest.TestCase):
     def test_yoy_quarterly(self) -> None:
         vals = [100.0] * 4 + [120.0]
         df = _quarterly_df({"X": vals})
-        rule = yoy_rule("X_YOY", "X", 4)
+        rule = pct_change_rule("X_YOY", "X", 4)
         result = apply_transformations(df, [rule])
         self.assertAlmostEqual(result["X_YOY"].iloc[-1], 0.20)
 

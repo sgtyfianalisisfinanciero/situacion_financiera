@@ -24,11 +24,13 @@ import pandas as pd
 
 from tesorotools.pipeline.engine import TransformationRule
 from tesorotools.pipeline.rules import (
+    cumsum_rule,
+    delta_rule,
+    pct_change_rule,
     ratio_rule,
     rolling_sum_rule,
     scale_rule,
     sum_rule,
-    yoy_rule,
 )
 
 if TYPE_CHECKING:
@@ -181,108 +183,59 @@ def dudosidad_rules() -> list[TransformationRule]:
 def stock_change_rules() -> list[TransformationRule]:
     """Stock changes and revaluation residuals.
 
-    Total stock change = level_t - level_{t-1}.
-    Revaluation = total change - net transactions (VNA/VNP).
-    All in 4Q rolling sums for annualization.
+    Uses ``delta_rule`` from tesorotools for stock changes
+    and ``difference_rule`` pattern for revaluations
+    (stock_change - transactions).
     """
-
-    def _delta(
-        stock_col: str,
-        shift: int,
-        suffix: str,
-    ) -> TransformationRule:
-        """Stock change: level_t - level_{t-shift}."""
-
-        def _compute(
-            df: pd.DataFrame,
-            s: str = stock_col,
-            p: int = shift,
-        ) -> pd.Series:
-            clean = df[s].dropna()
-            return clean - clean.shift(p)
-
-        return TransformationRule(
-            output_name=f"{stock_col}_DELTA_{suffix}",
-            dependencies=[stock_col],
-            compute=_compute,
-        )
-
-    def _reval(
-        delta_col: str,
-        flow_col: str,
-        output: str,
-    ) -> TransformationRule:
-        """Revaluation = stock change - transactions."""
-
-        def _compute(df: pd.DataFrame) -> pd.Series:
-            d = df[delta_col].dropna()
-            f = df[flow_col].dropna()
-            common = d.index.intersection(f.index)
-            return d.loc[common] - f.loc[common]
-
-        return TransformationRule(
-            output_name=output,
-            dependencies=[delta_col, flow_col],
-            compute=_compute,
-        )
+    from tesorotools.pipeline.rules import difference_rule
 
     return [
-        # 4Q deltas (for 4Q rolling charts).
-        _delta("CF_TOTAL_ACTIVO_BN", 4, "4Q"),
-        _delta("CF_TOTAL_PASIVO_BN", 4, "4Q"),
-        _reval(
-            "CF_TOTAL_ACTIVO_BN_DELTA_4Q",
-            "CF_VNA_4Q",
+        # 4Q deltas.
+        delta_rule("CF_TOTAL_ACTIVO_BN_DELTA_4Q", "CF_TOTAL_ACTIVO_BN", 4),
+        delta_rule("CF_TOTAL_PASIVO_BN_DELTA_4Q", "CF_TOTAL_PASIVO_BN", 4),
+        difference_rule(
             "CF_REVAL_ACTIVO_4Q",
+            ["CF_TOTAL_ACTIVO_BN_DELTA_4Q", "CF_VNA_4Q"],
         ),
-        _reval(
-            "CF_TOTAL_PASIVO_BN_DELTA_4Q",
-            "CF_VNP_4Q",
+        difference_rule(
             "CF_REVAL_PASIVO_4Q",
+            ["CF_TOTAL_PASIVO_BN_DELTA_4Q", "CF_VNP_4Q"],
         ),
-        # Quarterly deltas (for annual_recent charts).
-        _delta("CF_TOTAL_ACTIVO_BN", 1, "Q"),
-        _delta("CF_DEUDA_HOGARES_BN", 1, "Q"),
-        _reval(
-            "CF_TOTAL_ACTIVO_BN_DELTA_Q",
-            "CF_VNA_BN",
+        # Quarterly deltas.
+        delta_rule("CF_TOTAL_ACTIVO_BN_DELTA_Q", "CF_TOTAL_ACTIVO_BN", 1),
+        delta_rule("CF_DEUDA_HOGARES_BN_DELTA_Q", "CF_DEUDA_HOGARES_BN", 1),
+        difference_rule(
             "CF_REVAL_ACTIVO_Q",
+            ["CF_TOTAL_ACTIVO_BN_DELTA_Q", "CF_VNA_BN"],
         ),
-        _reval(
-            "CF_DEUDA_HOGARES_BN_DELTA_Q",
-            "CF_VAR_PRESTAMOS_BN",
+        difference_rule(
             "CF_REVAL_PRESTAMOS_Q",
+            ["CF_DEUDA_HOGARES_BN_DELTA_Q", "CF_VAR_PRESTAMOS_BN"],
         ),
-        # 4Q versions for pasivos (préstamos only).
-        _delta("CF_DEUDA_HOGARES_BN", 4, "4Q"),
-        _reval(
-            "CF_DEUDA_HOGARES_BN_DELTA_4Q",
-            "CF_VAR_PRESTAMOS_4Q",
+        # 4Q for préstamos.
+        delta_rule("CF_DEUDA_HOGARES_BN_DELTA_4Q", "CF_DEUDA_HOGARES_BN", 4),
+        difference_rule(
             "CF_REVAL_PRESTAMOS_4Q",
+            ["CF_DEUDA_HOGARES_BN_DELTA_4Q", "CF_VAR_PRESTAMOS_4Q"],
         ),
     ]
 
 
 def amortization_rules() -> list[TransformationRule]:
-    """Derived series for mortgage amortizations and
-    cumulative renegotiations."""
+    """Mortgage amortizations and cumulative renegotiations.
+
+    Amortization = delta(stock, 1) negated + flows.
+    Uses ``delta_rule`` + local compute for the identity.
+    ``cumsum_rule`` from tesorotools for renegotiations.
+    """
 
     def _amortizaciones(df: pd.DataFrame) -> pd.Series:
-        """Amort = stock_{t-1} - stock_t + flujos_t.
-
-        Uses _BN columns (billions) for consistent units.
-        Result is in billions of euros.
-        """
         stock = df["STOCK_VIVIENDA_BN"].dropna()
         flujos = df["FLUJOS_HIPOTECARIO_CON_RENEG_BN"].dropna()
         common = stock.index.intersection(flujos.index)
         s = stock.loc[common]
         f = flujos.loc[common]
         return s.shift(1) - s + f
-
-    def _reneg_acum(df: pd.DataFrame) -> pd.Series:
-        reneg = df["RENEGOCIACIONES"].dropna()
-        return reneg.cumsum()
 
     return [
         TransformationRule(
@@ -293,10 +246,16 @@ def amortization_rules() -> list[TransformationRule]:
             ],
             compute=_amortizaciones,
         ),
+        cumsum_rule("RENEGOCIACIONES_ACUM", "RENEGOCIACIONES"),
         TransformationRule(
-            output_name="RENEGOCIACIONES_ACUM",
-            dependencies=["RENEGOCIACIONES"],
-            compute=_reneg_acum,
+            output_name="AMORT_MA12",
+            dependencies=["AMORTIZACIONES_VIVIENDA"],
+            compute=lambda df: (
+                df["AMORTIZACIONES_VIVIENDA"]
+                .dropna()
+                .rolling(12, min_periods=12)
+                .mean()
+            ),
         ),
     ]
 
@@ -354,22 +313,22 @@ def growth_rate_rules() -> list[TransformationRule]:
     """Year-over-year growth rates for key series."""
     return [
         # Credit stocks (monthly, 12-period yoy)
-        yoy_rule("STOCK_VIVIENDA_YOY", "STOCK_VIVIENDA_BN", 12),
-        yoy_rule("STOCK_CONSUMO_YOY", "STOCK_CONSUMO_BN", 12),
-        yoy_rule("STOCK_OTROS_YOY", "STOCK_OTROS_BN", 12),
-        yoy_rule("STOCK_PRESTAMOS_YOY", "STOCK_PRESTAMOS_BN", 12),
+        pct_change_rule("STOCK_VIVIENDA_YOY", "STOCK_VIVIENDA_BN", 12),
+        pct_change_rule("STOCK_CONSUMO_YOY", "STOCK_CONSUMO_BN", 12),
+        pct_change_rule("STOCK_OTROS_YOY", "STOCK_OTROS_BN", 12),
+        pct_change_rule("STOCK_PRESTAMOS_YOY", "STOCK_PRESTAMOS_BN", 12),
         # Credit flows (monthly, 12-period yoy)
-        yoy_rule("FLUJOS_TOTAL_YOY", "FLUJOS_TOTAL_BN", 12),
-        yoy_rule(
+        pct_change_rule("FLUJOS_TOTAL_YOY", "FLUJOS_TOTAL_BN", 12),
+        pct_change_rule(
             "FLUJOS_HIPOTECARIO_YOY",
             "FLUJOS_HIPOTECARIO_CON_RENEG",
             12,
         ),
-        yoy_rule("FLUJOS_CONSUMO_YOY", "FLUJOS_CONSUMO", 12),
+        pct_change_rule("FLUJOS_CONSUMO_YOY", "FLUJOS_CONSUMO", 12),
         # Financial accounts (quarterly, 4-period yoy)
-        yoy_rule("CF_TOTAL_ACTIVO_YOY", "CF_TOTAL_ACTIVO_BN", 4),
-        yoy_rule("CF_DEUDA_HOGARES_YOY", "CF_DEUDA_HOGARES_BN", 4),
-        yoy_rule("CF_RIQUEZA_NETA_YOY", "CF_RIQUEZA_NETA_BN", 4),
+        pct_change_rule("CF_TOTAL_ACTIVO_YOY", "CF_TOTAL_ACTIVO_BN", 4),
+        pct_change_rule("CF_DEUDA_HOGARES_YOY", "CF_DEUDA_HOGARES_BN", 4),
+        pct_change_rule("CF_RIQUEZA_NETA_YOY", "CF_RIQUEZA_NETA_BN", 4),
     ]
 
 

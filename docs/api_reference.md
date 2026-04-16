@@ -125,15 +125,6 @@ artist de tesorotools adecuado según su tipo (`line`,
 `stacked_area`, `stacked_bar`). Devuelve la lista de IDs
 generados. Los gráficos que fallan se registran como warning.
 
-## `src.tables`
-
-Generación de tablas formateadas para el informe Word.
-
-**`generate_tables(config_path, data_path, out_dir)`** — Lee
-`series/tables.yaml`, extrae los últimos N periodos de cada
-serie, formatea los números, y guarda feathers en `out_dir`.
-Devuelve la lista de IDs generados.
-
 ## `src.report`
 
 Generación del documento Word desde template YAML.
@@ -153,17 +144,11 @@ un `display_name`, y un bloque `providers.bde` con `code` y
 
 ### `series/charts.yaml`
 
-Definiciones de los 25 gráficos. Cada entrada tiene tipo, series,
+Definiciones de los 26 gráficos. Cada entrada tiene tipo, series,
 formato, escala, fechas, leyenda.
-
-### `series/tables.yaml`
-
-Definiciones de las 3 tablas. Cada entrada tiene series, periodos,
-frecuencia, decimales, y opcionalmente series YOY.
 
 ### `series/template.yaml`
 
 Estructura del informe Word con custom tags de tesorotools.
-Define secciones, imágenes (referenciando PNGs), tablas
-(referenciando feathers), y textos. Las rutas `imports` son
+Define secciones, imágenes (referenciando PNGs) y textos. Las rutas `imports` son
 relativas a la ubicación del template.

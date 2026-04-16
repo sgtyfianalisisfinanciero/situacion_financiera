@@ -31,7 +31,6 @@ from src.charts import generate_charts
 from src.pipeline.rules import all_rules
 from src.report import generate_report
 from src.store import SeriesStore
-from src.tables import generate_tables
 from tesorotools.pipeline.engine import apply_transformations
 from tesorotools.providers.bde import BdeProvider
 
@@ -74,9 +73,6 @@ INSTRUMENTS_PATH = ROOT / "series" / "instruments.yaml"
 
 #: Path to the charts config.
 CHARTS_PATH = ROOT / "series" / "charts.yaml"
-
-#: Path to the tables config.
-TABLES_PATH = ROOT / "series" / "tables.yaml"
 
 #: Path to the report template.
 TEMPLATE_PATH = ROOT / "series" / "template.yaml"
@@ -253,11 +249,7 @@ def main() -> None:
     charts_dir = OUTPUT_DIR / "charts"
     generate_charts(CHARTS_PATH, chart_feather, charts_dir)
 
-    # 6. Generate tables
-    tables_dir = OUTPUT_DIR / "tables"
-    generate_tables(TABLES_PATH, chart_feather, tables_dir)
-
-    # 7. Generate Word report
+    # 6. Generate Word report
     report_path = OUTPUT_DIR / "informe_hogares.docx"
     generate_report(TEMPLATE_PATH, report_path)
 

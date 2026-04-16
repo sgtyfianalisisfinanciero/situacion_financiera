@@ -4,7 +4,7 @@ Pipeline automatizado para el informe de Situación Financiera de
 los Hogares: descarga 59 series temporales de la API del Banco de
 España, aplica transformaciones (normalización, agregaciones,
 ratios de dudosidad, tasas interanuales, sumas móviles), genera
-25 gráficos y 3 tablas con estilo tesorotools, y ensambla un
+26 gráficos y 3 tablas con estilo tesorotools, y ensambla un
 informe Word con los resultados.
 
 ## Instalación rápida
@@ -37,9 +37,8 @@ uv run --active python generar_hogares.py --full --lookback 2
 | `output/store_bde.feather` | Almacén incremental con códigos BdE crudos (no tocar) |
 | `output/datos_hogares.xlsx` | Excel con datos transformados (IDs canónicos) |
 | `output/datos_hogares.feather` | Feather con columna `date` (para consumo genérico) |
-| `output/datos_transformados.feather` | Feather con `DatetimeIndex` (para gráficos y tablas) |
-| `output/charts/*.png` | 25 gráficos PNG con estilo tesorotools |
-| `output/tables/*.feather` | 3 tablas formateadas como feather |
+| `output/datos_transformados.feather` | Feather con `DatetimeIndex` (para gráficos) |
+| `output/charts/*.png` | 26 gráficos PNG con estilo tesorotools |
 | `output/informe_hogares.docx` | Informe Word con gráficos, tablas y marcadores |
 
 ## Documentación

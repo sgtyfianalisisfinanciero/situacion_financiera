@@ -174,8 +174,7 @@ Esto debe producir:
 - `output/datos_hogares.xlsx` — Excel con datos transformados
 - `output/datos_hogares.feather` — feather genérico
 - `output/datos_transformados.feather` — feather con DatetimeIndex
-- `output/charts/*.png` — 25 gráficos
-- `output/tables/*.feather` — 3 tablas
+- `output/charts/*.png` — 26 gráficos
 - `output/informe_hogares.docx` — informe Word
 
 ## Convenciones del código
@@ -248,15 +247,13 @@ En `pyproject.toml`:
 pythonVersion = "3.14"
 extraPaths = ["."]
 typeCheckingMode = "strict"
-reportUnknownMemberType = "warning"
-reportUnknownVariableType = "warning"
-reportAttributeAccessIssue = "warning"
 ```
 
-El modo strict es el más exigente de pyright. Las tres reglas
-rebajadas a warning son por limitaciones de los stubs de pandas,
-no por nuestro código. Si pandas mejora sus stubs en el futuro,
-estas excepciones se pueden eliminar.
+El modo strict es el más exigente de pyright. Las limitaciones
+de los stubs de pandas (tipos parcialmente desconocidos) se
+gestionan con directivas `# pyright: report*=false` a nivel de
+fichero en los módulos que lo necesitan (como `src/charts.py`),
+no en la configuración global.
 
 El `extraPaths = ["."]` permite a pyright encontrar el paquete
 `src` desde la raíz del proyecto.

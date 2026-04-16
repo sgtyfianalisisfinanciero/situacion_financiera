@@ -32,6 +32,8 @@ charts:
     source: "Fuente: INE y Banco de España"
     series:
       AHORRO_BRUTO: "Ahorro bruto"
+    series_styles:
+      "Ahorro bruto": { color: "C1" }
     format: { units: "%", decimals: 1 }
     start_date: "2000-01-01"
 
@@ -44,11 +46,13 @@ charts:
     series:
       CF_VNA_4Q: "Adq. netas"
       CF_REVAL_ACTIVO_4Q: "Revalorización y otras var."
+    overlay_series:
+      CF_TOTAL_ACTIVO_BN_DELTA_4Q: "Total"
     format: { units: "", decimals: 0 }
     scale: 1000
     start_date: "2014-01-01"
     baseline: true
-    legend: { ncol: 2 }
+    legend: { ncol: 3, sep: -0.25 }
 
   vnp_descomp:
     type: stacked_bar
@@ -59,11 +63,13 @@ charts:
     series:
       CF_VAR_PRESTAMOS_4Q: "Préstamos"
       CF_REVAL_PRESTAMOS_4Q: "Revalorización y otras var."
+    overlay_series:
+      CF_DEUDA_HOGARES_BN_DELTA_4Q: "Total"
     format: { units: "", decimals: 0 }
     scale: 1000
     start_date: "2014-01-01"
     baseline: true
-    legend: { ncol: 2 }
+    legend: { ncol: 3, sep: -0.25 }
 
   activos_stock:
     type: stacked_bar
@@ -76,10 +82,14 @@ charts:
       CF_PARTICIPACIONES_BN: "Participaciones y FI"
       CF_SEGUROS_BN: "Seguros y pensiones"
       CF_OTROS_Y_PRESTAMOS_BN: "Otros"
+    overlay_series:
+      CF_TOTAL_ACTIVO_BN: "Activo total"
     format: { units: "", decimals: 0 }
     scale: 1000
     start_date: "1999-01-01"
     baseline: false
+    bar_width: 1.0
+    x_rotation: 45
     legend: { ncol: 3, sep: -0.18 }
 
   activos_composicion:
@@ -150,10 +160,13 @@ charts:
     series:
       DEUDA_PIB_VAR_DEUDA: "Deuda"
       DEUDA_PIB_VAR_PIB: "PIB"
+    overlay_series:
+      DEUDA_PIB_VAR_TOTAL: "Total"
     format: { units: "%", decimals: 1 }
     start_date: "2018-06-01"
     baseline: true
-    legend: { ncol: 2 }
+    x_rotation: 45
+    legend: { ncol: 3 }
 
   deuda_hogares_yoy:
     type: line
@@ -246,6 +259,18 @@ charts:
     baseline: true
     legend: { ncol: 3 }
 
+  renegociaciones_type_curve:
+    type: type_curve
+    title: "Renegociaciones acumuladas del crédito para vivienda"
+    subtitle: "Millones de euros"
+    source: "Fuente: Banco de España"
+    series:
+      RENEGOCIACIONES: "Renegociaciones"
+    cumulative: true
+    start_year: 2015
+    format: { units: "", decimals: 0 }
+    legend: { ncol: 4, sep: -0.28 }
+
   hipotecas_tipo_volumen:
     type: line
     title: "Volumen nuevas hipotecas por tipo"
@@ -280,9 +305,13 @@ charts:
     source: "Fuente: Banco de España"
     series:
       AMORTIZACIONES_VIVIENDA: "Amortizaciones"
+      AMORT_MA12: "Media móvil 12m"
+    series_styles:
+      "Media móvil 12m": { linestyle: "--", linewidth: 1 }
     format: { units: "", decimals: 0 }
     scale: 1000
     start_date: "2019-03-01"
+    legend: { ncol: 2 }
 
   renegociaciones_acum:
     type: line

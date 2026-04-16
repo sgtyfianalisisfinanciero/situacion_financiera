@@ -184,3 +184,10 @@ report: !report
         subtitle: "Millones de euros. Acum. 4T"
     source_otros_2: !text
       text: "Fuente: Banco de España"
+
+    renegociaciones_type_curve.png: !image
+      title: "Renegociaciones acumuladas del crédito para vivienda"
+      subtitle: "Millones de euros"
+      width: 5
+    source_otros_3: !text
+      text: "Fuente: Banco de España"

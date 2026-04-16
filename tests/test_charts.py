@@ -155,6 +155,73 @@ class TestGenerateCharts(unittest.TestCase):
         mock_lp_cls.assert_called_once()
         mock_lp_cls.return_value.plot.assert_called_once()
 
+    def test_type_curve(self) -> None:
+        # Monthly data spanning 2 years.
+        idx = pd.date_range("2024-01-01", periods=24, freq="MS")
+        idx.name = "date"
+        df = pd.DataFrame({"X": range(1, 25)}, index=idx)
+        feather = self.tmp_path / "monthly.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "tc": {
+                    "type": "type_curve",
+                    "series": {"X": "Series X"},
+                    "cumulative": True,
+                    "start_year": 2024,
+                    "format": {"units": "", "decimals": 0},
+                    "legend": {"ncol": 2},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_tc"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["tc"])
+        self.assertTrue((out_dir / "tc.png").exists())
+
+    def test_type_curve_non_cumulative(self) -> None:
+        idx = pd.date_range("2024-01-01", periods=12, freq="MS")
+        idx.name = "date"
+        df = pd.DataFrame({"X": range(1, 13)}, index=idx)
+        feather = self.tmp_path / "monthly2.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "tc2": {
+                    "type": "type_curve",
+                    "series": {"X": "X"},
+                    "start_year": 2024,
+                    "format": {"units": "", "decimals": 0},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_tc2"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["tc2"])
+
+    def test_stacked_bar_with_figsize(self) -> None:
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "sized": {
+                    "type": "stacked_bar",
+                    "series": {"MONTHLY": "M"},
+                    "format": {"units": "", "decimals": 0},
+                    "figsize": [14, 7],
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_fs"
+        result = generate_charts(config_path, self.feather_path, out_dir)
+        self.assertEqual(result, ["sized"])
+
     def test_stacked_area_dispatch(self) -> None:
         config_path = self.tmp_path / "charts.yaml"
         _write_config(
@@ -229,6 +296,52 @@ class TestGenerateCharts(unittest.TestCase):
         out_dir = self.tmp_path / "charts_sc"
         result = generate_charts(config_path, feather, out_dir)
         self.assertEqual(result, ["scaled"])
+
+    @patch("src.charts.LinePlot")
+    def test_series_styles_passed(self, mock_lp_cls: MagicMock) -> None:
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "styled": {
+                    "type": "line",
+                    "series": {"MONTHLY": "M"},
+                    "format": {"units": "", "decimals": 0},
+                    "series_styles": {"MONTHLY": {"linestyle": "--"}},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_st"
+        generate_charts(config_path, self.feather_path, out_dir)
+        call_kwargs = mock_lp_cls.call_args.kwargs
+        self.assertIn("series_styles", call_kwargs)
+
+    def test_resampled_with_overlay(self) -> None:
+        idx = pd.date_range("2023-01-01", periods=8, freq="QS")
+        idx.name = "date"
+        df = pd.DataFrame(
+            {"A": range(1, 9), "B": range(11, 19), "T": range(21, 29)},
+            index=idx,
+        )
+        feather = self.tmp_path / "q_overlay.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "overlaid": {
+                    "type": "stacked_bar",
+                    "resample": "annual_recent",
+                    "series": {"A": "A", "B": "B"},
+                    "overlay_series": {"T": "Total"},
+                    "format": {"units": "", "decimals": 0},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_ov"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["overlaid"])
 
     @patch("src.charts.LinePlot")
     def test_failed_chart_logged(self, mock_lp_cls: MagicMock) -> None:
