@@ -10,7 +10,7 @@ dependencies = [
     "pyyaml>=6.0",
     "openpyxl>=3.1",
     "python-docx>=1.2.0",
-    "tesorotools-python[bde,ecb]>=0.0.30",
+    "tesorotools-python[bde,ecb]>=0.0.31",
 ]
 
 [dependency-groups]

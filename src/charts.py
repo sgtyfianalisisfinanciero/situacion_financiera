@@ -377,7 +377,6 @@ class _ResampledBarPlot(StackedBarPlot):
         )
 
 
-_QUARTER_MONTHS = {1: "ene.", 4: "abr.", 7: "jul.", 10: "oct."}
 _QUARTER_LABELS_SHORT = {1: "mar.", 4: "jun.", 7: "sep.", 10: "dic."}
 
 
@@ -388,30 +387,7 @@ class _QuarterlyBarPlot(StackedBarPlot):
     and Q3 respectively: the month corresponds to the end
     of the quarter (BLS convention), and ticks are placed
     every ``tick_every`` quarters (default 2).
-
-    Also relaxes the default ``.dropna()`` in ``_prepare_data``
-    (which drops any row with *any* NaN) to ``dropna(how="all")``
-    + ``fillna(0)``. Rationale: BLS series have staggered
-    start dates (e.g. BLR only from 2024), so strict dropna
-    discards every earlier row; treating missing subcomponents
-    as 0 contribution is semantically correct for net-percentage
-    data.
     """
-
-    def _prepare_data(self) -> pd.DataFrame:  # type: ignore[override]
-        start = (
-            pd.Timestamp(self.start_date)
-            if self.start_date
-            else self.data.index.min()
-        )
-        end = (
-            pd.Timestamp(self.end_date)
-            if self.end_date
-            else self.data.index.max()
-        )
-        all_cols = list(self.series.keys()) + list(self.overlay_series.keys())
-        sliced = self.data.loc[start:end, all_cols].dropna(how="all")
-        return sliced.fillna(0) * self.scale
 
     def _format_xticks(  # type: ignore[override]
         self,

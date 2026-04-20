@@ -365,7 +365,7 @@ requires-dist = [
     { name = "python-docx", specifier = ">=1.2.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
-    { name = "tesorotools-python", extras = ["bde", "ecb"], specifier = ">=0.0.30" },
+    { name = "tesorotools-python", extras = ["bde", "ecb"], specifier = ">=0.0.31" },
 ]
 
 [package.metadata.requires-dev]
@@ -1119,7 +1119,7 @@ wheels = [
 
 [[package]]
 name = "tesorotools-python"
-version = "0.0.30"
+version = "0.0.31"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "babel" },
@@ -1135,9 +1135,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/46/1e/2abecfc1ea07fe545308f487c927c0f126425f94b37bc577096f80f1e093/tesorotools_python-0.0.30.tar.gz", hash = "sha256:5075658c93c03e7d26e3d40d96b3b2a459bf8180437bba0dc04a92dd944286b7", size = 235756, upload-time = "2026-04-20T11:14:44.098Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/8b/e7e6edef4cf68ad0b151a5803301d0da73a41cabeb32549035023f066445/tesorotools_python-0.0.31.tar.gz", hash = "sha256:def9105c1457b54c910fc17c388e7c29466cd99dea6288c28d6b1c2cb87d197e", size = 236043, upload-time = "2026-04-20T15:30:39.819Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/f7/6e9145cfe79a11c1189050765144473cb451df2784035eaf918a6de25c52/tesorotools_python-0.0.30-py3-none-any.whl", hash = "sha256:f2bee12afdc6cdf81c9908b1e59f4aabb003a3cbd09078c10b9ad1473f61b926", size = 252320, upload-time = "2026-04-20T11:14:42.549Z" },
+    { url = "https://files.pythonhosted.org/packages/64/aa/d468110216c487b935441ab842d8145df39d696b77e048dd7d21f7cba60f/tesorotools_python-0.0.31-py3-none-any.whl", hash = "sha256:4987f820693507f971ea88938fbd9fc8b83a9a4b590cedca7671dbc35441a02c", size = 252622, upload-time = "2026-04-20T15:30:41.606Z" },
 ]
 
 [package.optional-dependencies]

@@ -8,10 +8,12 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from generar_hogares import (
+    INSTRUMENTS_PATH,
     build_code_maps,
     export_excel,
     load_instruments,
 )
+from src.pipeline.rules import all_rules
 
 
 # -- Fixtures -----------------------------------------------
@@ -150,6 +152,52 @@ class TestExportExcel(unittest.TestCase):
             xlsx_path = Path(d) / "sub" / "dir" / "out.xlsx"
             export_excel(df, xlsx_path)
             self.assertTrue(xlsx_path.exists())
+
+
+# -- catalog consistency -------------------------------------
+
+
+class TestCatalogConsistency(unittest.TestCase):
+    """Static check that every rule's dependencies resolve.
+
+    Simulates what ``apply_transformations`` does at runtime
+    (see tesorotools.pipeline.engine) but without executing
+    any compute. Each rule's output is added to the available
+    set only if its dependencies are already available,
+    mirroring the sequential resolution in the engine.
+
+    Catches typos and missing-rule regressions that would
+    otherwise surface as silent WARNING logs ("Skipping
+    X: missing dependencies Y") and empty charts.
+    """
+
+    def test_all_rules_resolve_against_real_catalog(self) -> None:
+        catalog = load_instruments(INSTRUMENTS_PATH)
+        rules = all_rules(catalog)
+
+        available: set[str] = set(catalog)
+        unresolved: list[tuple[str, set[str]]] = []
+        for rule in rules:
+            missing = set(rule.dependencies) - available
+            if missing:
+                unresolved.append((rule.output_name, missing))
+                continue
+            available.add(rule.output_name)
+
+        self.assertFalse(
+            unresolved,
+            msg=(
+                "Some rules cannot resolve their dependencies "
+                "against the catalog + upstream rules. "
+                "Either the dependency name is a typo, the "
+                "catalog is missing an instrument, or the "
+                "rule order in all_rules() is wrong:\n"
+                + "\n".join(
+                    f"  {output}: missing {sorted(missing)}"
+                    for output, missing in unresolved
+                )
+            ),
+        )
 
 
 # -- main (smoke test) ---------------------------------------
