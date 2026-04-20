@@ -442,3 +442,487 @@ instruments:
       bde:
         code: "D_MEADU226"
         unit: K_EUR
+
+  # --- Bank Lending Survey (BCE, trimestral) ---
+  # Encuesta de préstamos bancarios. España, préstamos a
+  # hogares para adquisición de vivienda. Todas las series
+  # usan BLS_AGG_METHOD=FNET (net percentage of banks).
+
+  BLS_STD_VIV:
+    display_name: "BLS estándares de crédito vivienda"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_DMD_VIV:
+    display_name: "BLS demanda de crédito vivienda"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_TC_VIV:
+    display_name: "BLS términos y condiciones vivienda"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.O.H.H.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_DMD_HMP:
+    display_name: "BLS determinante: perspectivas mercado vivienda"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.HMP.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_CCF:
+    display_name: "BLS determinante: confianza de los consumidores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CCF.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_GLI:
+    display_name: "BLS determinante: nivel general de tipos de interés"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.GLI.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  # "Otras fuentes de financiación" del boletín se
+  # construye como AVERAGE(IFS, LOB, OSF), siguiendo la
+  # metodología del informe original (ver
+  # BLS y CES/BLS/4T2025 - BLS.xlsx, hoja "Demanda
+  # vivienda", fórmula `=AVERAGE(E:G)`).
+
+  BLS_DMD_IFS:
+    display_name: "BLS det.: financiación interna / ahorro"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.IFS.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_LOB:
+    display_name: "BLS det.: préstamos de otros bancos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.LOB.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_OSF:
+    display_name: "BLS det.: otras fuentes de finan. (agregado BCE)"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OSF.H.H.B3.ZZ.D.FNET"
+        unit: PCT
+
+  # --- Determinantes de los estándares de crédito (vivienda) ---
+  # Las 3 agrupaciones del boletín (Coste/Competencia/
+  # Percepción) son AVERAGEs de los subcomponentes.
+  # Tolerancia al riesgo (RTO) y Otros factores (OF1) van
+  # directos. Estas series existen desde ~2022.
+
+  BLS_STD_CP:
+    display_name: "BLS std det.: capital position"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CP.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_MF:
+    display_name: "BLS std det.: acceso a financiación de mercado"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MF.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_LP:
+    display_name: "BLS std det.: liquidity position"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.LP.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_BC:
+    display_name: "BLS std det.: competencia bancaria"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.BC.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_NBC:
+    display_name: "BLS std det.: competencia no bancaria"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.NBC.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_GEA:
+    display_name: "BLS std det.: actividad económica general"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.GEA.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_CWB:
+    display_name: "BLS std det.: solvencia del prestatario"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CWB.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_HMP:
+    display_name: "BLS std det.: perspectivas mercado vivienda"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.HMP.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_RTO:
+    display_name: "BLS std det.: tolerancia al riesgo de los bancos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.RTO.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STD_OF1:
+    display_name: "BLS std det.: otros factores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OF1.H.H.B3.ST.S.FNET"
+        unit: PCT
+
+  # --- Determinantes de términos y condiciones (vivienda) ---
+  # Van directas, sin agregación.
+
+  BLS_TC_MAL:
+    display_name: "BLS TC det.: margen préstamos promedio"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MAL.H.H.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TC_MRL:
+    display_name: "BLS TC det.: margen préstamos más arriesgados"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MRL.H.H.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TC_OF1:
+    display_name: "BLS TC det.: otros factores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OF1.H.H.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TC_BLR:
+    display_name: "BLS TC det.: tipo de interés de los préstamos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.BLR.H.H.B3.TC.S.FNET"
+        unit: PCT
+
+  # --- BLS Consumo (crédito al consumo hogares) ---
+  # Mismas métricas que vivienda con BLS_COUNT_DETAIL=C.
+  # Agregados B3 (realizado) + F3 (previsión) para el
+  # gráfico de líneas, y determinantes para el apilado.
+
+  BLS_STD_CONS:
+    display_name: "BLS estándares crédito consumo"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_DMD_CONS:
+    display_name: "BLS demanda crédito consumo"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_TC_CONS:
+    display_name: "BLS términos y condiciones consumo"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.O.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_STD_CONS_F3:
+    display_name: "BLS estándares consumo (previsión)"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.C.F3.ST.S.FNET"
+        unit: PCT
+
+  BLS_DMD_CONS_F3:
+    display_name: "BLS demanda consumo (previsión)"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.C.F3.ZZ.D.FNET"
+        unit: PCT
+
+  # Determinantes demanda consumo (6 componentes apilados)
+
+  BLS_DMD_C_SDC:
+    display_name: "BLS det. consumo: gasto bienes duraderos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.SDC.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_CCF:
+    display_name: "BLS det. consumo: confianza consumidores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CCF.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_GLI:
+    display_name: "BLS det. consumo: nivel gral. tipos de interés"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.GLI.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_CRE:
+    display_name: "BLS det. consumo: Real Estate"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CRE.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_IFS:
+    display_name: "BLS det. consumo: financ. interna / ahorro"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.IFS.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_LOB:
+    display_name: "BLS det. consumo: préstamos de otros bancos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.LOB.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_OSF:
+    display_name: "BLS det. consumo: otras fuentes de financiación"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OSF.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  BLS_DMD_C_OF1:
+    display_name: "BLS det. consumo: otros factores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OF1.H.C.B3.ZZ.D.FNET"
+        unit: PCT
+
+  # --- Determinantes de estándares de crédito al consumo ---
+  # Siguen la misma estructura que vivienda pero con
+  # BLS_COUNT_DETAIL=C y sustituyendo CWB/HMP por CWC
+  # (solvencia del consumidor) y RCD (colateral). Las 3
+  # agrupaciones (Coste, Competencia, Percepción) son
+  # AVERAGE de los subcomponentes (ver hoja Estándares
+  # consumo del Excel de referencia).
+
+  BLS_STDC_CP:
+    display_name: "BLS std consumo det.: capital position"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CP.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_MF:
+    display_name: "BLS std consumo det.: acceso financiación mercado"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MF.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_LP:
+    display_name: "BLS std consumo det.: liquidity position"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.LP.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_BC:
+    display_name: "BLS std consumo det.: competencia bancaria"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.BC.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_NBC:
+    display_name: "BLS std consumo det.: competencia no bancaria"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.NBC.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_GEA:
+    display_name: "BLS std consumo det.: actividad económica general"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.GEA.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_CWC:
+    display_name: "BLS std consumo det.: solvencia del consumidor"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CWC.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_RCD:
+    # Nota: el Excel de referencia usa la key BLS_COUNT=E,
+    # BLS_COUNT_DETAIL=Z para colateral. Se mantiene por
+    # fidelidad (devuelve los mismos valores que H.C).
+    display_name: "BLS std consumo det.: colateral"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.RCD.E.Z.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_RTO:
+    display_name: "BLS std consumo det.: tolerancia al riesgo"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.RTO.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  BLS_STDC_OF1:
+    display_name: "BLS std consumo det.: otros factores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OF1.H.C.B3.ST.S.FNET"
+        unit: PCT
+
+  # --- Determinantes de términos y condiciones consumo ---
+
+  BLS_TCC_MAL:
+    display_name: "BLS TC consumo det.: margen préstamos promedio"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MAL.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_MRL:
+    display_name: "BLS TC consumo det.: margen más arriesgados"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MRL.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_CRQ:
+    display_name: "BLS TC consumo det.: requisitos de colateral"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.CRQ.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_SZL:
+    display_name: "BLS TC consumo det.: tamaño préstamos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.SZL.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_NIC:
+    display_name: "BLS TC consumo det.: gastos no relacionados con tipos"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.NIC.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_MTY:
+    display_name: "BLS TC consumo det.: vencimiento"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.MTY.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_OF1:
+    display_name: "BLS TC consumo det.: otros factores"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.OF1.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  BLS_TCC_BLR:
+    display_name: "BLS TC consumo det.: tipo de interés"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.BLR.H.C.B3.TC.S.FNET"
+        unit: PCT
+
+  # --- Solicitudes de préstamos rechazadas (EFFECT_DOMAIN=RA) ---
+  # Porcentaje neto de bancos que reportan un aumento vs
+  # descenso de solicitudes rechazadas.
+
+  BLS_RECH_VIV:
+    display_name: "BLS solicitudes rechazadas vivienda"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.H.B3.RA.D.FNET"
+        unit: PCT
+
+  BLS_RECH_CONS:
+    display_name: "BLS solicitudes rechazadas consumo"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.C.B3.RA.D.FNET"
+        unit: PCT
+
+  # --- Consumer Expectations Survey (CES, BCE) ---
+  # Indicadores agregados de la encuesta mensual/trimestral
+  # a hogares de la zona euro. Dataflow: CES.
+  # C3220/C6120 son mensuales (% cambio esperado, media
+  # ponderada). Q4010 es trimestral (% ponderado que
+  # respondió "sí").
+
+  CES_INGRESOS:
+    display_name: "CES: expectativa cambio ingresos 12m (%)"
+    providers:
+      ecb:
+        code: "CES.M.ES.ALL.T.C3220.NUM_VAR.WA"
+        unit: PCT
+
+  CES_GASTOS:
+    display_name: "CES: expectativa cambio gastos 12m (%)"
+    providers:
+      ecb:
+        code: "CES.M.ES.ALL.T.C6120.NUM_VAR.WA"
+        unit: PCT
+
+  CES_CREDITO_PEDIDO:
+    display_name: "CES: pidió crédito en los 3 meses previos (%)"
+    providers:
+      ecb:
+        code: "CES.Q.ES.ALL.T.Q4010.YES.WS"
+        unit: PCT
+
+  # Previsiones a 3 meses (forward) para estándares y
+  # demanda. No existen F3 para T&C ni para los
+  # determinantes (la encuesta sólo pregunta expectativas
+  # de los agregados). Se usan para dibujar una línea
+  # discontinua que extiende el último trimestre realizado.
+
+  BLS_STD_VIV_F3:
+    display_name: "BLS estándares vivienda (previsión próximo trim.)"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.H.F3.ST.S.FNET"
+        unit: PCT
+
+  BLS_DMD_VIV_F3:
+    display_name: "BLS demanda vivienda (previsión próximo trim.)"
+    providers:
+      ecb:
+        code: "BLS.Q.ES.ALL.Z.H.H.F3.ZZ.D.FNET"
+        unit: PCT

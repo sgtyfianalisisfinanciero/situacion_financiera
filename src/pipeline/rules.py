@@ -18,7 +18,7 @@ every monetary series to a common unit: **billions of
 euros** (suffix ``_BN``).  Percentage series are left as-is.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pandas as pd
 
@@ -32,6 +32,24 @@ from tesorotools.pipeline.rules import (
     scale_rule,
     sum_rule,
 )
+
+
+def _mean_rule(output: str, sources: list[str]) -> TransformationRule:
+    """NaN-safe row-wise average of several columns.
+
+    Used for BLS aggregations like
+    ``Percepción del riesgo = mean(GEA, CWB, HMP)`` where the
+    original spreadsheet computes ``=AVERAGE(...)`` over the
+    relevant sub-components. ``.mean(axis=1)`` skips NaNs by
+    default, so quarters where only some sub-items are
+    reported still produce a value.
+    """
+    return TransformationRule(
+        output_name=output,
+        dependencies=list(sources),
+        compute=lambda df, cols=list(sources): df[cols].mean(axis=1),
+    )
+
 
 if TYPE_CHECKING:
     from generar_hogares import InstrumentCatalog
@@ -58,11 +76,19 @@ def normalize_rules(
     BN_EUR), creates a rule that converts to billions and
     stores the result in a new column with suffix ``_BN``.
 
-    Percentage series (PCT) are skipped.
+    Percentage series (PCT) are skipped.  The unit is read
+    from whichever provider declares the instrument (bde or
+    ecb); first declared provider wins.
     """
     rules: list[TransformationRule] = []
     for inst_id, info in catalog.items():
-        unit = info["providers"].get("bde", {}).get("unit", "")
+        providers = cast(dict[str, dict[str, str]], info["providers"])
+        unit = ""
+        for prov_cfg in providers.values():
+            cfg_unit = prov_cfg.get("unit", "")
+            if cfg_unit:
+                unit = cfg_unit
+                break
         divisor = _TO_BILLIONS.get(unit)
         if divisor is None:
             continue
@@ -87,6 +113,56 @@ def aggregation_rules() -> list[TransformationRule]:
                 "CF_OTROS_ACTIVOS_BN",
                 "CF_PRESTAMOS_ACTIVO_BN",
             ],
+        ),
+        # "Otras fuentes de financiación": promedio de los
+        # 3 componentes alternativos (IFS, LOB, OSF) según
+        # la fórmula `=AVERAGE(...)` del Excel de referencia
+        # (BLS y CES/BLS/4T2025 - BLS.xlsx).
+        _mean_rule(
+            "BLS_DMD_OTROS",
+            ["BLS_DMD_IFS", "BLS_DMD_LOB", "BLS_DMD_OSF"],
+        ),
+        # Agregados para el gráfico de estándares (vivienda).
+        _mean_rule(
+            "BLS_STD_COSTE",
+            ["BLS_STD_CP", "BLS_STD_MF", "BLS_STD_LP"],
+        ),
+        _mean_rule(
+            "BLS_STD_COMPET",
+            ["BLS_STD_BC", "BLS_STD_NBC"],
+        ),
+        _mean_rule(
+            "BLS_STD_PERCEP",
+            ["BLS_STD_GEA", "BLS_STD_CWB", "BLS_STD_HMP"],
+        ),
+        # Consumo: "Uso financiación alternativa" = AVG(IFS, LOB, OSF)
+        # (fórmula `=(F+G+H)/3` en la hoja "Demanda consumo").
+        _mean_rule(
+            "BLS_DMD_C_USO_ALT",
+            ["BLS_DMD_C_IFS", "BLS_DMD_C_LOB", "BLS_DMD_C_OSF"],
+        ),
+        # Agregados para estándares consumo (hoja
+        # "Estándares consumo"): Coste = AVG(CP,MF,LP),
+        # Competencia = AVG(BC,NBC),
+        # Percepción = AVG(GEA,CWC,RCD).
+        _mean_rule(
+            "BLS_STDC_COSTE",
+            ["BLS_STDC_CP", "BLS_STDC_MF", "BLS_STDC_LP"],
+        ),
+        _mean_rule(
+            "BLS_STDC_COMPET",
+            ["BLS_STDC_BC", "BLS_STDC_NBC"],
+        ),
+        _mean_rule(
+            "BLS_STDC_PERCEP",
+            ["BLS_STDC_GEA", "BLS_STDC_CWC", "BLS_STDC_RCD"],
+        ),
+        # "Otros términos y condiciones" consumo =
+        # AVG(SZL, NIC, MTY) — tamaño, no-intereses,
+        # vencimiento.
+        _mean_rule(
+            "BLS_TCC_OTROS_TC",
+            ["BLS_TCC_SZL", "BLS_TCC_NIC", "BLS_TCC_MTY"],
         ),
     ]
 

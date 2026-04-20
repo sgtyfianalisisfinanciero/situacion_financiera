@@ -345,7 +345,7 @@ dependencies = [
     { name = "python-docx" },
     { name = "pyyaml" },
     { name = "requests" },
-    { name = "tesorotools-python", extra = ["bde"] },
+    { name = "tesorotools-python", extra = ["bde", "ecb"] },
 ]
 
 [package.dev-dependencies]
@@ -365,7 +365,7 @@ requires-dist = [
     { name = "python-docx", specifier = ">=1.2.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
-    { name = "tesorotools-python", extras = ["bde"], specifier = ">=0.0.27" },
+    { name = "tesorotools-python", extras = ["bde", "ecb"], specifier = ">=0.0.30" },
 ]
 
 [package.metadata.requires-dev]
@@ -1119,7 +1119,7 @@ wheels = [
 
 [[package]]
 name = "tesorotools-python"
-version = "0.0.27"
+version = "0.0.30"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "babel" },
@@ -1135,13 +1135,16 @@ dependencies = [
     { name = "pyyaml" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/af/e89aaf67d071e12cdb8f87b46b3727449779fee41e206507e77108568400/tesorotools_python-0.0.27.tar.gz", hash = "sha256:88a7cf1d7f69648dd22ccbb0d692abd5a61bee45187f393fc1a9d49d45722ead", size = 231539, upload-time = "2026-04-15T23:17:37.999Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/1e/2abecfc1ea07fe545308f487c927c0f126425f94b37bc577096f80f1e093/tesorotools_python-0.0.30.tar.gz", hash = "sha256:5075658c93c03e7d26e3d40d96b3b2a459bf8180437bba0dc04a92dd944286b7", size = 235756, upload-time = "2026-04-20T11:14:44.098Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/b8/a7d31fb24a32267bcdeca1c681702e56c3c7e79714171c25ce58a26740f2/tesorotools_python-0.0.27-py3-none-any.whl", hash = "sha256:a4b28889d52c6f614f7281ebc2af18def39467e84a8de789ef524fa017d5787c", size = 247255, upload-time = "2026-04-15T23:17:39.741Z" },
+    { url = "https://files.pythonhosted.org/packages/27/f7/6e9145cfe79a11c1189050765144473cb451df2784035eaf918a6de25c52/tesorotools_python-0.0.30-py3-none-any.whl", hash = "sha256:f2bee12afdc6cdf81c9908b1e59f4aabb003a3cbd09078c10b9ad1473f61b926", size = 252320, upload-time = "2026-04-20T11:14:42.549Z" },
 ]
 
 [package.optional-dependencies]
 bde = [
+    { name = "requests" },
+]
+ecb = [
     { name = "requests" },
 ]
 

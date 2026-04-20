@@ -132,6 +132,68 @@ report: !report
     source_ti_1: !text
       text: "Fuente: Banco de España"
 
+    row_bls: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      bls_demanda_vivienda.png: !image
+        title: "Cambios en la demanda, términos y condiciones y estándares de crédito para adquisición de vivienda"
+        subtitle: "Porcentaje"
+      bls_determinantes_vivienda.png: !image
+        title: "Determinantes de los cambios de la demanda de crédito para adquisición de vivienda"
+        subtitle: "Porcentaje"
+    row_bls_oferta: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      bls_determinantes_estandares.png: !image
+        title: "Determinantes evolución estándares de crédito aplicados a préstamos para adquisición de vivienda"
+        subtitle: "Porcentaje"
+      bls_determinantes_tc.png: !image
+        title: "Determinantes evolución términos y condiciones préstamos para adquisición de vivienda"
+        subtitle: "Porcentaje"
+    row_bls_consumo: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      bls_demanda_consumo.png: !image
+        title: "Cambios en la demanda, términos y condiciones y estándares de crédito al consumo"
+        subtitle: "Porcentaje"
+      bls_determinantes_consumo.png: !image
+        title: "Determinantes de la evolución de la demanda de crédito al consumo"
+        subtitle: "Porcentaje"
+    row_bls_consumo_oferta: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      bls_determinantes_estandares_consumo.png: !image
+        title: "Determinantes evolución estándares de crédito aplicados a préstamos al consumo"
+        subtitle: "Porcentaje"
+      bls_determinantes_tc_consumo.png: !image
+        title: "Determinantes evolución términos y condiciones préstamos al consumo"
+        subtitle: "Porcentaje"
+    bls_solicitudes_rechazadas.png: !image
+      title: "Solicitudes de préstamos rechazadas"
+      subtitle: "Porcentaje"
+      width: 5
+    source_bls: !text
+      text: "Fuente: Banco Central Europeo"
+
+    row_ces: !images
+      title: ""
+      subtitle: ""
+      width: 3
+      ces_ingresos_gastos.png: !image
+        title: "Expectativas en la variación de los ingresos netos medios de los hogares y del gasto medio a 12 meses vista"
+        subtitle: "Porcentaje"
+      ces_credito_pedido.png: !image
+        title: "Han pedido algún tipo de crédito en los tres meses previos"
+        subtitle: "Porcentaje"
+    source_ces: !text
+      text: "Fuente: Banco Central Europeo (Encuesta de expectativas de los consumidores, indicadores agregados)"
+    note_bls: !text
+      text: "Nota: En el segmento de oferta (términos y condiciones y estándares de crédito) porcentaje hace referencia a la diferencia entre el porcentaje bancos que reportan un endurecimiento y un aflojamiento de las condiciones financieras a la hora de realizar la encuesta, de tal manera que los valores positivos indican un endurecimiento. Mientras que en el segmento de demanda porcentaje hace referencia a la diferencia entre el porcentaje de bancos que reportan un aumento y un descenso de la demanda, de tal manera que un valor positivo indicaría un aumento de la demanda de préstamos bancarios. Las columnas apiladas hacen referencia al porcentaje neto de bancos para cada uno de los motivos. La línea discontinua hace referencia a la previsión de los bancos encuestados para el próximo trimestre."
+
     dudosidad.png: !image
       title: "Ratios de dudosidad de la financiación a hogares"
       subtitle: "Porcentaje"

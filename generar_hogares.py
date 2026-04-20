@@ -32,7 +32,9 @@ from src.pipeline.rules import all_rules
 from src.report import generate_report
 from src.store import SeriesStore
 from tesorotools.pipeline.engine import apply_transformations
+from tesorotools.providers.base import DataProvider
 from tesorotools.providers.bde import BdeProvider
+from tesorotools.providers.ecb import EcbProvider
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,8 +44,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class _BdeConfig(TypedDict):
-    """Provider config for a BdE series."""
+class _ProviderConfig(TypedDict):
+    """Provider config for a series.
+
+    Shared shape for every provider: a provider-specific
+    ``code`` plus a free-form ``unit`` tag read by the
+    unit normalization rules.
+    """
 
     code: str
     unit: str
@@ -52,7 +59,8 @@ class _BdeConfig(TypedDict):
 class _Providers(TypedDict, total=False):
     """Provider block inside an instrument entry."""
 
-    bde: _BdeConfig
+    bde: _ProviderConfig
+    ecb: _ProviderConfig
 
 
 class InstrumentEntry(TypedDict):
@@ -80,8 +88,12 @@ TEMPLATE_PATH = ROOT / "series" / "template.yaml"
 #: Output directory for generated files.
 OUTPUT_DIR = ROOT / "output"
 
-#: Path to the persistent feather store (raw BdE codes only).
-STORE_PATH = OUTPUT_DIR / "store_bde.feather"
+#: Provider name -> factory. One feather store per provider
+#: lives in OUTPUT_DIR as ``store_{name}.feather``.
+PROVIDERS: dict[str, type[DataProvider]] = {
+    "bde": BdeProvider,
+    "ecb": EcbProvider,
+}
 
 
 def load_instruments(
@@ -104,38 +116,36 @@ def load_instruments(
     return cast(InstrumentCatalog, raw["instruments"])
 
 
-def build_code_map(
+def build_code_maps(
     instruments: InstrumentCatalog,
-) -> dict[str, str]:
-    """Extract the canonical_id -> bde_code mapping.
-
-    Parameters
-    ----------
-    instruments
-        Catalog as returned by ``load_instruments``.
+) -> dict[str, dict[str, str]]:
+    """Group the catalog by provider.
 
     Returns
     -------
-    dict[str, str]
-        ``{canonical_id: bde_code}`` for every series
-        that has a ``bde`` provider entry.
-
-    Raises
-    ------
-    RuntimeError
-        If no series with a ``bde`` provider are found.
+    dict[str, dict[str, str]]
+        ``{provider_name: {canonical_id: provider_code}}``,
+        restricted to providers listed in ``PROVIDERS`` that
+        actually have entries.  An instrument with more than
+        one provider block appears once per provider; the
+        first one that downloads successfully wins at merge
+        time (columns are concatenated; duplicates use the
+        first non-NaN value).
     """
-    mapping: dict[str, str] = {}
+    maps: dict[str, dict[str, str]] = {p: {} for p in PROVIDERS}
     for inst_id, info in instruments.items():
         providers = info.get("providers", {})
-        if "bde" in providers:
-            mapping[inst_id] = providers["bde"]["code"]
+        for prov_name in PROVIDERS:
+            if prov_name in providers:
+                maps[prov_name][inst_id] = providers[prov_name]["code"]
 
-    if not mapping:
+    filtered = {name: m for name, m in maps.items() if m}
+    if not filtered:
         raise RuntimeError(
-            "No series with provider 'bde' found in the instrument catalog"
+            "No instrument in the catalog uses a known provider "
+            f"({', '.join(PROVIDERS)})"
         )
-    return mapping
+    return filtered
 
 
 def export_excel(df: pd.DataFrame, path: Path) -> None:
@@ -186,33 +196,41 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # 1. Read catalog
-    instruments = load_instruments()
-    code_map = build_code_map(instruments)
-    logger.info("Catalog: %d instruments", len(code_map))
-
-    # 2. Download (incremental or full)
-    provider = BdeProvider()
-    bde_codes = list(code_map.values())
-
-    # The store works with raw BdE codes internally.
-    # We rename to canonical IDs after loading.
-    raw_store = SeriesStore(STORE_PATH)
-
-    if args.full and raw_store.exists():
-        # Delete existing feather to force full download.
-        raw_store.path.unlink()
-        logger.info("Deleted existing store (--full)")
-
-    raw_store.update(
-        provider,
-        bde_codes,
-        lookback_quarters=args.lookback,
+    # 1. Read catalog (explicit arg so tests can patch
+    # INSTRUMENTS_PATH at the module level).
+    instruments = load_instruments(INSTRUMENTS_PATH)
+    code_maps = build_code_maps(instruments)
+    total_codes = sum(len(m) for m in code_maps.values())
+    logger.info(
+        "Catalog: %d instruments across providers %s",
+        total_codes,
+        sorted(code_maps),
     )
 
-    # Load and rename to canonical IDs.
-    rename_map = {v: k for k, v in code_map.items()}
-    df = raw_store.load().rename(columns=rename_map)
+    # 2. Download (incremental or full), one store per provider.
+    # Each store holds raw provider codes; we rename to
+    # canonical IDs when loading, then concat horizontally.
+    frames: list[pd.DataFrame] = []
+    for prov_name, cmap in code_maps.items():
+        provider = PROVIDERS[prov_name]()
+        store = SeriesStore(OUTPUT_DIR / f"store_{prov_name}.feather")
+
+        if args.full and store.exists():
+            store.path.unlink()
+            logger.info("Deleted existing %s store (--full)", prov_name)
+
+        store.update(
+            provider,
+            list(cmap.values()),
+            lookback_quarters=args.lookback,
+        )
+
+        rename_map = {v: k for k, v in cmap.items()}
+        frames.append(store.load().rename(columns=rename_map))
+
+    df = pd.concat(frames, axis=1)
+    df.sort_index(inplace=True)
+    df.index.name = "date"
     logger.info(
         "Data: %d rows x %d columns",
         len(df),

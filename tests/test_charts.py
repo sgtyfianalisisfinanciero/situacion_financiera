@@ -12,6 +12,7 @@ import pandas as pd
 import yaml
 
 from src.charts import (
+    _build_forecast_bridges,
     _clean_slice,
     _make_format,
     _make_legend,
@@ -98,6 +99,38 @@ class TestCleanSlice(unittest.TestCase):
         clean = _clean_slice(df, ["MONTHLY"], "2020-06-01", "2020-09-30")
         self.assertTrue((clean.index >= pd.Timestamp("2020-06-01")).all())
         self.assertTrue((clean.index <= pd.Timestamp("2020-09-30")).all())
+
+
+class TestBuildForecastBridges(unittest.TestCase):
+    def test_two_point_series_per_bridge(self) -> None:
+        idx = pd.date_range("2024-01-01", periods=4, freq="QS")
+        df = pd.DataFrame(
+            {"REAL": [10, 20, 30, 40], "FCST": [5, 15, 25, 35]},
+            index=idx,
+        )
+        bridges = {"OUT": {"realized": "REAL", "forecast": "FCST"}}
+        out = _build_forecast_bridges(df, bridges)
+        # Expected: 2 rows (last_real, last_real + 1 quarter)
+        # with OUT column holding [40, 35].
+        self.assertEqual(len(out.dropna()), 2)
+        self.assertEqual(out["OUT"].dropna().iloc[0], 40)
+        self.assertEqual(out["OUT"].dropna().iloc[1], 35)
+
+    def test_empty_inputs_produce_no_rows(self) -> None:
+        idx = pd.date_range("2024-01-01", periods=4, freq="QS")
+        df = pd.DataFrame(
+            {"REAL": [float("nan")] * 4, "FCST": [float("nan")] * 4},
+            index=idx,
+        )
+        bridges = {"OUT": {"realized": "REAL", "forecast": "FCST"}}
+        out = _build_forecast_bridges(df, bridges)
+        self.assertTrue(out.empty or out["OUT"].dropna().empty)
+
+    def test_empty_bridges_returns_empty(self) -> None:
+        idx = pd.date_range("2024-01-01", periods=4, freq="QS")
+        df = pd.DataFrame({"X": [1, 2, 3, 4]}, index=idx)
+        out = _build_forecast_bridges(df, {})
+        self.assertEqual(list(out.columns), [])
 
 
 class TestMakeFormat(unittest.TestCase):
@@ -408,6 +441,86 @@ class TestGenerateCharts(unittest.TestCase):
         result = generate_charts(config_path, feather, out_dir)
         self.assertEqual(result, ["resampled"])
         self.assertTrue((out_dir / "resampled.png").exists())
+
+    @patch("src.charts.LinePlot")
+    def test_line_with_forecast_bridges(self, mock_lp_cls: MagicMock) -> None:
+        """forecast_bridges in cfg triggers join with extension."""
+        idx = pd.date_range("2024-01-01", periods=4, freq="QS")
+        idx.name = "date"
+        df = pd.DataFrame(
+            {"REAL": [1.0, 2.0, 3.0, 4.0], "FCST": [0.5, 1.5, 2.5, 3.5]},
+            index=idx,
+        )
+        feather = self.tmp_path / "fb.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "bridged": {
+                    "type": "line",
+                    "series": {
+                        "REAL": "Real",
+                        "_BRIDGE": "_bridge",
+                    },
+                    "forecast_bridges": {
+                        "_BRIDGE": {"realized": "REAL", "forecast": "FCST"},
+                    },
+                    "format": {"units": "", "decimals": 0},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_fb"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["bridged"])
+        mock_lp_cls.assert_called_once()
+
+    def test_stacked_quarterly_dispatch(self) -> None:
+        """resample: quarterly triggers _QuarterlyBarPlot path.
+
+        Also exercises the relaxed dropna (partial NaN rows
+        kept, filled with 0) and the month-year tick labels.
+        """
+        idx = pd.date_range("2023-01-01", periods=8, freq="QS")
+        idx.name = "date"
+        # B is NaN in the first half — strict dropna would
+        # wipe those rows, but _QuarterlyBarPlot fills with 0.
+        df = pd.DataFrame(
+            {
+                "A": [10, 20, 30, 40, 50, 60, 70, 80],
+                "B": [
+                    float("nan"),
+                    float("nan"),
+                    float("nan"),
+                    float("nan"),
+                    1,
+                    2,
+                    3,
+                    4,
+                ],
+            },
+            index=idx,
+        )
+        feather = self.tmp_path / "q_quarterly.feather"
+        df.to_feather(feather)
+
+        config_path = self.tmp_path / "charts.yaml"
+        _write_config(
+            config_path,
+            {
+                "quarterly": {
+                    "type": "stacked_bar",
+                    "resample": "quarterly",
+                    "series": {"A": "A", "B": "B"},
+                    "format": {"units": "", "decimals": 0},
+                }
+            },
+        )
+        out_dir = self.tmp_path / "charts_qa"
+        result = generate_charts(config_path, feather, out_dir)
+        self.assertEqual(result, ["quarterly"])
+        self.assertTrue((out_dir / "quarterly.png").exists())
 
     @patch("src.charts.LinePlot")
     def test_temp_feather_cleaned_up(self, mock_lp_cls: MagicMock) -> None:

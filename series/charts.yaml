@@ -374,6 +374,225 @@ charts:
     start_date: "2020-04-01"
     legend: { ncol: 3 }
 
+  # --------------------------------------------------
+  # Encuesta de préstamos bancarios (BLS, BCE)
+  # --------------------------------------------------
+
+  bls_demanda_vivienda:
+    type: line
+    title: "Cambios en la demanda, términos y condiciones y estándares de crédito para adquisición de vivienda"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_STD_VIV: "Estándares de crédito"
+      BLS_DMD_VIV: "Demanda"
+      BLS_TC_VIV: "Términos y condiciones"
+      _BLS_STD_VIV_FCST: "_std_fcst"
+      _BLS_DMD_VIV_FCST: "_dmd_fcst"
+    series_styles:
+      "Estándares de crédito": { color: "C0" }
+      "Demanda": { color: "C1" }
+      "Términos y condiciones": { color: "C2" }
+      "_std_fcst": { color: "C0", linestyle: "--" }
+      "_dmd_fcst": { color: "C1", linestyle: "--" }
+    forecast_bridges:
+      _BLS_STD_VIV_FCST:
+        realized: BLS_STD_VIV
+        forecast: BLS_STD_VIV_F3
+      _BLS_DMD_VIV_FCST:
+        realized: BLS_DMD_VIV
+        forecast: BLS_DMD_VIV_F3
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    legend: { ncol: 3 }
+
+  bls_determinantes_vivienda:
+    type: stacked_bar
+    resample: quarterly
+    title: "Determinantes de los cambios de la demanda de crédito para adquisición de vivienda"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_DMD_HMP: "Perspectivas del mercado de la vivienda"
+      BLS_DMD_CCF: "Confianza consumidores"
+      BLS_DMD_GLI: "Nivel general de tipos de interés"
+      BLS_DMD_OTROS: "Otras fuentes de financiación"
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    bar_width: 0.8
+    x_rotation: 45
+    legend: { ncol: 2, sep: -0.28 }
+
+  bls_determinantes_estandares:
+    type: stacked_bar
+    resample: quarterly
+    title: "Determinantes evolución estándares de crédito aplicados a préstamos para adquisición de vivienda"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_STD_RTO: "Tolerancia al riesgo de los bancos"
+      BLS_STD_OF1: "Otros factores"
+      BLS_STD_COSTE: "Coste de los fondos y restricciones de balance"
+      BLS_STD_COMPET: "Competencia"
+      BLS_STD_PERCEP: "Percepción del riesgo"
+    format: { units: "", decimals: 0 }
+    start_date: "2022-01-01"
+    baseline: true
+    bar_width: 0.8
+    x_rotation: 45
+    legend: { ncol: 2, sep: -0.35 }
+
+  bls_determinantes_tc:
+    type: stacked_bar
+    resample: quarterly
+    title: "Determinantes evolución términos y condiciones préstamos para adquisición de vivienda"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_TC_MAL: "Margen préstamos promedio"
+      BLS_TC_MRL: "Margen préstamos más arriesgados"
+      BLS_TC_OF1: "Otros factores"
+      BLS_TC_BLR: "Tipo de interés de los préstamos"
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    bar_width: 0.8
+    x_rotation: 45
+    legend: { ncol: 2, sep: -0.30 }
+
+  bls_demanda_consumo:
+    type: line
+    title: "Cambios en la demanda, términos y condiciones y estándares de crédito al consumo"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_STD_CONS: "Estándares de crédito"
+      BLS_DMD_CONS: "Demanda"
+      BLS_TC_CONS: "Términos y condiciones"
+      _BLS_STD_CONS_FCST: "_std_cons_fcst"
+      _BLS_DMD_CONS_FCST: "_dmd_cons_fcst"
+    series_styles:
+      "Estándares de crédito": { color: "C0" }
+      "Demanda": { color: "C1" }
+      "Términos y condiciones": { color: "C2" }
+      "_std_cons_fcst": { color: "C0", linestyle: "--" }
+      "_dmd_cons_fcst": { color: "C1", linestyle: "--" }
+    forecast_bridges:
+      _BLS_STD_CONS_FCST:
+        realized: BLS_STD_CONS
+        forecast: BLS_STD_CONS_F3
+      _BLS_DMD_CONS_FCST:
+        realized: BLS_DMD_CONS
+        forecast: BLS_DMD_CONS_F3
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    legend: { ncol: 3 }
+
+  bls_determinantes_consumo:
+    type: stacked_bar
+    resample: quarterly
+    title: "Determinantes de la evolución de la demanda de crédito al consumo"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_DMD_C_SDC: "Gasto en consumo de bienes duraderos"
+      BLS_DMD_C_CCF: "Confianza consumidores"
+      BLS_DMD_C_GLI: "Nivel general de tipos de interés"
+      BLS_DMD_C_CRE: "Real Estate"
+      BLS_DMD_C_OF1: "Otros factores"
+      BLS_DMD_C_USO_ALT: "Uso financiación alternativa"
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    bar_width: 0.8
+    x_rotation: 45
+    legend: { ncol: 2, sep: -0.35 }
+
+  bls_determinantes_estandares_consumo:
+    type: stacked_bar
+    resample: quarterly
+    title: "Determinantes evolución estándares de crédito aplicados a préstamos al consumo"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_STDC_COSTE: "Coste de fondos y restricciones de balance"
+      BLS_STDC_RTO: "Tolerancia al riesgo de los bancos"
+      BLS_STDC_PERCEP: "Percepción del riesgo"
+      BLS_STDC_COMPET: "Competencia"
+      BLS_STDC_OF1: "Otros factores"
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    bar_width: 0.8
+    x_rotation: 45
+    legend: { ncol: 2, sep: -0.35 }
+
+  ces_ingresos_gastos:
+    type: line
+    title: "Expectativas en la variación de los ingresos netos medios de los hogares y del gasto medio a 12 meses vista"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo (Encuesta de expectativas de los consumidores)"
+    series:
+      CES_INGRESOS: "Ingresos"
+      CES_GASTOS: "Gastos"
+    series_styles:
+      "Ingresos": { color: "C0" }
+      "Gastos": { color: "C1" }
+    format: { units: "", decimals: 1 }
+    start_date: "2022-04-01"
+    baseline: false
+    legend: { ncol: 2 }
+
+  ces_credito_pedido:
+    type: line
+    title: "Han pedido algún tipo de crédito en los tres meses previos"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo (Encuesta de expectativas de los consumidores)"
+    series:
+      CES_CREDITO_PEDIDO: "% ha pedido crédito"
+    format: { units: "", decimals: 0 }
+    start_date: "2022-04-01"
+    baseline: false
+
+  bls_solicitudes_rechazadas:
+    type: line
+    title: "Solicitudes de préstamos rechazadas"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_RECH_VIV: "Vivienda"
+      BLS_RECH_CONS: "Consumo"
+    series_styles:
+      "Vivienda": { color: "C0" }
+      "Consumo": { color: "C1" }
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    legend: { ncol: 2 }
+
+  bls_determinantes_tc_consumo:
+    type: stacked_bar
+    resample: quarterly
+    title: "Determinantes evolución términos y condiciones préstamos al consumo"
+    subtitle: "Porcentaje"
+    source: "Fuente: Banco Central Europeo"
+    series:
+      BLS_TCC_MAL: "Margen préstamos promedio"
+      BLS_TCC_MRL: "Margen préstamos más arriesgados"
+      BLS_TCC_CRQ: "Requisitos de colateral"
+      BLS_TCC_OF1: "Otros factores"
+      BLS_TCC_OTROS_TC: "Otros términos y condiciones"
+      BLS_TCC_BLR: "Tipo de interés de los préstamos"
+    format: { units: "", decimals: 0 }
+    start_date: "2021-01-01"
+    baseline: true
+    bar_width: 0.8
+    x_rotation: 45
+    legend: { ncol: 2, sep: -0.35 }
+
   tedr_renegociaciones:
     type: line
     title: "TEDR de las renegociaciones de crédito para vivienda"

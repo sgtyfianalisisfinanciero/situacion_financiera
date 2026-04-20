@@ -228,6 +228,39 @@ def _plot_type_curve(
     logger.info("Chart: %s (type_curve)", out_path.name)
 
 
+def _build_forecast_bridges(
+    df: pd.DataFrame,
+    bridges: dict[str, dict[str, str]],
+) -> pd.DataFrame:
+    """Build 2-point dashed extensions from realized to forecast.
+
+    For each bridge ``{out_col: {realized, forecast}}``, emits a
+    Series with two observations: the last realized value at its
+    own date, and the forecast value one quarter later.  The
+    resulting DataFrame may have a later max date than *df*, so
+    the caller must align (outer join) to preserve that tail.
+    """
+    pieces: list[pd.Series] = []
+    for out_col, cfg in bridges.items():
+        real = df[cfg["realized"]].dropna()
+        fcst = df[cfg["forecast"]].dropna()
+        if real.empty or fcst.empty:
+            continue
+        last_real = real.index.max()
+        anchor = min(last_real, fcst.index.max())
+        next_date = anchor + pd.DateOffset(months=3)
+        s = pd.Series(
+            [float(real.loc[last_real]), float(fcst.loc[anchor])],
+            index=pd.DatetimeIndex([last_real, next_date], name="date"),
+            dtype="float64",
+            name=out_col,
+        )
+        pieces.append(s)
+    if not pieces:
+        return pd.DataFrame(index=df.index)
+    return pd.concat(pieces, axis=1)
+
+
 def _plot_line(
     chart_id: str,
     cfg: dict[str, Any],
@@ -235,6 +268,10 @@ def _plot_line(
     out_dir: Path,
 ) -> None:
     """Generate a line chart via tesorotools LinePlot."""
+    bridges: dict[str, dict[str, str]] = cfg.get("forecast_bridges", {})
+    if bridges:
+        extra = _build_forecast_bridges(df, bridges)
+        df = df.join(extra, how="outer")
     cols = list(cfg["series"].keys())
     clean = _clean_slice(df, cols, cfg.get("start_date"), cfg.get("end_date"))
 
@@ -340,6 +377,65 @@ class _ResampledBarPlot(StackedBarPlot):
         )
 
 
+_QUARTER_MONTHS = {1: "ene.", 4: "abr.", 7: "jul.", 10: "oct."}
+_QUARTER_LABELS_SHORT = {1: "mar.", 4: "jun.", 7: "sep.", 10: "dic."}
+
+
+class _QuarterlyBarPlot(StackedBarPlot):
+    """StackedBarPlot with quarterly x-tick labels.
+
+    Labels look like ``"mar.-21"``, ``"sep.-21"`` for Q1
+    and Q3 respectively: the month corresponds to the end
+    of the quarter (BLS convention), and ticks are placed
+    every ``tick_every`` quarters (default 2).
+
+    Also relaxes the default ``.dropna()`` in ``_prepare_data``
+    (which drops any row with *any* NaN) to ``dropna(how="all")``
+    + ``fillna(0)``. Rationale: BLS series have staggered
+    start dates (e.g. BLR only from 2024), so strict dropna
+    discards every earlier row; treating missing subcomponents
+    as 0 contribution is semantically correct for net-percentage
+    data.
+    """
+
+    def _prepare_data(self) -> pd.DataFrame:  # type: ignore[override]
+        start = (
+            pd.Timestamp(self.start_date)
+            if self.start_date
+            else self.data.index.min()
+        )
+        end = (
+            pd.Timestamp(self.end_date)
+            if self.end_date
+            else self.data.index.max()
+        )
+        all_cols = list(self.series.keys()) + list(self.overlay_series.keys())
+        sliced = self.data.loc[start:end, all_cols].dropna(how="all")
+        return sliced.fillna(0) * self.scale
+
+    def _format_xticks(  # type: ignore[override]
+        self,
+        ax: Any,
+        plot_data: pd.DataFrame,
+        x: Any,
+    ) -> None:
+        dates = plot_data.index
+        tick_every = 2
+        tick_pos = list(range(0, len(dates), tick_every))
+        labels: list[str] = []
+        for i in tick_pos:
+            d: pd.Timestamp = dates[i]  # type: ignore[assignment]
+            labels.append(
+                f"{_QUARTER_LABELS_SHORT[d.month]}-{d.year % 100:02d}"
+            )
+        ax.set_xticks(tick_pos)
+        ax.set_xticklabels(
+            labels,
+            rotation=self.x_rotation or 45,
+            ha="right",
+        )
+
+
 _TYPE_MAP: dict[str, type] = {
     "stacked_area": StackedAreaPlot,
     "stacked_bar": StackedBarPlot,
@@ -398,6 +494,14 @@ def generate_charts(
                         df,
                         out_dir,
                         _ResampledBarPlot,
+                    )
+                elif resample == "quarterly":
+                    _plot_stacked(
+                        chart_id,
+                        cfg,
+                        df,
+                        out_dir,
+                        _QuarterlyBarPlot,
                     )
                 else:
                     _plot_stacked(chart_id, cfg, df, out_dir, cls)
